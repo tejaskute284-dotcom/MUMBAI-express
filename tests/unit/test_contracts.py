@@ -155,7 +155,7 @@ def test_webhook_payload_contract():
 
 
 def test_settings_load():
-    assert settings.app_name == "Satyasetu"
+    assert settings.app_name == "MUMBAI express"
     assert settings.search_provider in ["brave", "tavily", "mock"]
     assert isinstance(settings.retrieval_budget_ms, int)
 

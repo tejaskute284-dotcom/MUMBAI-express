@@ -45,7 +45,7 @@ export function forwardToTarget(targetId) {
       image: forwardedImage,
       rawFile: msg.rawFile || null
     });
-    showToast("Message forwarded to SatyaSetu Bot for fact checking! 🛡️");
+    showToast("Message forwarded to MUMBAI express Bot for fact checking! 🛡️");
   } else {
     // Forwarding to ordinary user/group chat
     const now = new Date();

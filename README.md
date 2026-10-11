@@ -1,7 +1,7 @@
-# SatyaSetu (सत्यसेतु) 🛡️
+# MUMBAI express 🛡️
 ### AI-Powered Multi-Modal Fact-Checking Engine for WhatsApp
 
-> **SatyaSetu** ("Bridge of Truth") is an automated, production-grade misinformation verification engine built to combat viral fake news, rumors, and manipulated media on WhatsApp in real time. It processes multi-modal forwards (Text, Screenshots, Voice notes, PDFs, URLs), isolates check-worthy claims, queries authoritative fact-checking databases, analyzes stance and entailment using NLI, and delivers clear, multi-lingual WhatsApp verifications in seconds.
+> **MUMBAI express** is an automated, production-grade misinformation verification engine built to combat viral fake news, rumors, and manipulated media on WhatsApp in real time. It processes multi-modal forwards (Text, Screenshots, Voice notes, PDFs, URLs), isolates check-worthy claims, queries authoritative fact-checking databases, analyzes stance and entailment using NLI, and delivers clear, multi-lingual WhatsApp verifications in seconds.
 
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)

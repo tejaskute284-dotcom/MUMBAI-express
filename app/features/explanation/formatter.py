@@ -198,7 +198,7 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
     divider = "─" * 25
 
     header_parts = [
-        "🔍 *SatyaSetu Fact Check*",
+        "🔍 *MUMBAI express Fact Check*",
         divider,
     ]
 
@@ -243,7 +243,7 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
 
     footer_parts.extend([
         divider,
-        "_SatyaSetu — AI-powered multilingual fact checking_",
+        "_MUMBAI express — AI-powered multilingual fact checking_",
     ])
 
     # BUG-17: was wrapping claim_blocks in a list which caused no leading/trailing

@@ -7,7 +7,7 @@
 export const INITIAL_CHATS = {
   bot: {
     id: "bot",
-    name: "SatyaSetu",
+    name: "MUMBAI express",
     sub: "Official Business Account · AI Fact Checker",
     avatar: "🛡️",
     color: "linear-gradient(135deg, #00a884, #00796b)",
@@ -19,9 +19,9 @@ export const INITIAL_CHATS = {
     messages: [
       {
         id: "b1",
-        sender: "SatyaSetu",
+        sender: "MUMBAI express",
         isMe: false,
-        text: "*SatyaSetu Fact-Check Assistant*\n\nForward any viral message, health rumor, policy claim, or upload a circular screenshot/audio to verify against authoritative fact-checkers (IFCN, PIB, WHO, Wikipedia).",
+        text: "*MUMBAI express Fact-Check Assistant*\n\nForward any viral message, health rumor, policy claim, or upload a circular screenshot/audio to verify against authoritative fact-checkers (IFCN, PIB, WHO, Wikipedia).",
         time: "Today",
         status: ""
       }
@@ -56,7 +56,7 @@ export const INITIAL_CHATS = {
           author: "Mummy",
           text: "नींबू का रस और गर्म पानी पीने से 48 घंटे में कैंसर ठीक हो जाता है..."
         },
-        text: "Mummy, aise unverified forwards pe vishwas mat karo. Main SatyaSetu se check karta hoon.",
+        text: "Mummy, aise unverified forwards pe vishwas mat karo. Main MUMBAI express se check karta hoon.",
         time: "9:00 am",
         status: "✓✓"
       },

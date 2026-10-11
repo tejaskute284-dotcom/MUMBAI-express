@@ -1,5 +1,5 @@
 # AI/ML Guidance — Is This Forward True?
-> Owner: Aaryan Rorane (ML Lead)  
+> Owner: Tejas Kute <tejaskute284@gmail.com>  
 > Covers every model, why it was chosen, how it's integrated, failure modes, and demo notes.  
 > Feed §8 to AI at the start of every ML coding session.
 

@@ -163,7 +163,7 @@ def create_app() -> FastAPI:
     """Build and return the configured FastAPI application."""
 
     _app = FastAPI(
-        title="SatyaSetu — WhatsApp Fact Checker",
+        title="MUMBAI express — WhatsApp Fact Checker",
         description=(
             "Multilingual AI-powered fact-checking via WhatsApp. "
             "Hack on Track — FCRIT Vashi 2026."

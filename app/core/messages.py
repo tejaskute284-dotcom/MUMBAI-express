@@ -20,7 +20,7 @@ from __future__ import annotations
 
 ACK_MESSAGE = (
     "🔍 Checking this for you, one moment…\n"
-    "_SatyaSetu Fact-Check Bot_"
+    "_MUMBAI express Fact-Check Bot_"
 )
 
 # ── Rate limit notice ─────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ RATE_LIMIT_MESSAGE = (
 
 ERROR_MESSAGE = (
     "⚠️ Couldn't check this right now. Please try again in a moment.\n"
-    "_SatyaSetu Fact-Check Bot_"
+    "_MUMBAI express Fact-Check Bot_"
 )
 
 # ── Empty / uncheck-worthy claim ─────────────────────────────────────────────
@@ -54,7 +54,7 @@ UNSUPPORTED_MEDIA_MESSAGE = (
 # ── Demo config payload (returned by GET /api/demo/config) ───────────────────
 
 DEMO_CONFIG = {
-    "bot_name": "SatyaSetu",
+    "bot_name": "MUMBAI express",
     "bot_phone": "+91 XX XXXX XXXX (simulated)",
     "messages": {
         "ack": ACK_MESSAGE,

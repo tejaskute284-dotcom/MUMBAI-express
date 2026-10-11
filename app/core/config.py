@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     )
 
     # Server Settings
-    app_name: str = Field(default="Satyasetu", description="Application name")
+    app_name: str = Field(default="MUMBAI express", description="Application name")
     port: int = Field(default=8000, description="Uvicorn port")
     env: str = Field(default="development", description="'development' | 'production'")
     log_level: str = Field(default="INFO", description="Logging level")

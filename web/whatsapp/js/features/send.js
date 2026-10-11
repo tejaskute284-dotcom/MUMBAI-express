@@ -67,7 +67,7 @@ export async function runBotLifecycle(claimText, extraData = {}) {
   // Step 1: Immediate acknowledgement bubble
   const ackMsg = {
     id: "bot-ack-" + Date.now(),
-    sender: "SatyaSetu",
+    sender: "MUMBAI express",
     isMe: false,
     text: "Received! Checking this claim… 🔍",
     time: timeStr,
@@ -100,7 +100,7 @@ export async function runBotLifecycle(claimText, extraData = {}) {
 
     const botReplyMsg = {
       id: "bot-" + Date.now(),
-      sender: "SatyaSetu",
+      sender: "MUMBAI express",
       isMe: false,
       text: replyContent,
       time: respTimeStr,
@@ -116,7 +116,7 @@ export async function runBotLifecycle(claimText, extraData = {}) {
     const errTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
     const botErrMsg = {
       id: "bot-err-" + Date.now(),
-      sender: "SatyaSetu",
+      sender: "MUMBAI express",
       isMe: false,
       text: "Couldn't check this right now. Please try again.",
       isError: true,

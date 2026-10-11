@@ -117,7 +117,7 @@ function renderChatArea() {
   if (chat.isBot) {
     const encPill = document.createElement("div");
     encPill.className = "encryption-pill";
-    encPill.innerHTML = `<span>🔒</span> Official SatyaSetu AI Bot. End-to-end verified pipeline. Never shares your number.`;
+    encPill.innerHTML = `<span>🔒</span> Official MUMBAI express AI Bot. End-to-end verified pipeline. Never shares your number.`;
     stream.appendChild(encPill);
   }
 
@@ -230,7 +230,7 @@ function renderPresenter() {
     if (verdictEl) verdictEl.textContent = "IDLE";
     if (strengthEl) strengthEl.textContent = "N/A";
     if (latencyEl) latencyEl.textContent = "0 ms";
-    if (jsonPre) jsonPre.textContent = "// No verification has been executed yet.\n// Send a claim to SatyaSetu to inspect pipeline telemetry.";
+    if (jsonPre) jsonPre.textContent = "// No verification has been executed yet.\n// Send a claim to MUMBAI express to inspect pipeline telemetry.";
   }
 }
 

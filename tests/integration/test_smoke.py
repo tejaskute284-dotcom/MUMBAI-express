@@ -38,7 +38,7 @@ class TestPipelineEndToEnd:
         assert response.overall_verdict in list(Verdict)
         assert isinstance(response.claim_results, list)
         assert len(response.formatted_reply) > 0
-        assert "*SatyaSetu Fact Check*" in response.formatted_reply
+        assert "*MUMBAI express Fact Check*" in response.formatted_reply
         assert "timings_ms" in response.model_dump()
         assert "total_ms" in response.timings_ms
 

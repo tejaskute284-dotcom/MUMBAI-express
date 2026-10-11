@@ -157,7 +157,7 @@ class TestFormatWhatsappReply:
     def test_contains_satyasetu_header(self):
         response = _make_response()
         reply = format_whatsapp_reply(response)
-        assert "SatyaSetu" in reply
+        assert "MUMBAI express" in reply
 
     def test_contains_overall_verdict_emoji(self):
         response = _make_response(overall_verdict=Verdict.REFUTED)

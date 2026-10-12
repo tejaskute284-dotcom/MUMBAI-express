@@ -1,4 +1,4 @@
-﻿"""
+"""
 End-to-end pipeline orchestrator (Wave 8).
 
 Glues all seven layers together into a single synchronous function:
@@ -147,8 +147,8 @@ def run_pipeline(message: IngestedMessage) -> CheckResponse:
         )
 
     # BUG-09: worthiness gate — skip retrieval for very low-signal inputs
-    if worthiness_score < 0.30 and not claims:
-        logger.info("Low check-worthiness (%.2f) with no claims — short-circuiting.", worthiness_score)
+    if worthiness_score < 0.30:
+        logger.info("Low check-worthiness (%.2f) — short-circuiting before retrieval.", worthiness_score)
         timings["total_ms"] = round((time.monotonic() - t_start) * 1000, 1)
         return CheckResponse(
             claim_results=[],

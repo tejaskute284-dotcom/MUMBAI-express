@@ -13,7 +13,7 @@ en:
     translation_unavailable: "This explanation is in English because translation is currently unavailable."
 
 hi:
-  needs_native_review: false # Reviewed by Shreya
+  needs_native_review: false  # Native review completed
   verdicts:
     SUPPORTED: "सत्य (पुष्ट)"
     REFUTED: "असत्य (खारिज)"
@@ -27,7 +27,7 @@ hi:
     translation_unavailable: "यह विवरण अंग्रेजी में है क्योंकि अनुवाद वर्तमान में उपलब्ध नहीं है।"
 
 mr:
-  needs_native_review: false # Reviewed by Shreya
+  needs_native_review: false  # Native review completed
   verdicts:
     SUPPORTED: "सत्य (पुष्टी झाली)"
     REFUTED: "असत्य (खोडून काढले)"

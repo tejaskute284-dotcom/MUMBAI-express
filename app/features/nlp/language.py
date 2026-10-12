@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/features/nlp/language.py
 ─────────────────────────────
 Language and script identification for Indic and English text inputs.
@@ -29,18 +29,7 @@ from typing import Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Module-level reference to app settings (lazy to avoid circular imports).
-_settings = None
-
-def _get_settings():
-    global _settings
-    if _settings is None:
-        try:
-            from app.core.config import settings as _s
-            _settings = _s
-        except Exception:
-            pass
-    return _settings
+from app.core.config import settings
 
 # Module-level singleton for the fastText LID model.
 # Injected by app.main lifespan and overrideable in tests via set_ft_model().
@@ -171,19 +160,18 @@ def detect_language_via_gemini(text: str) -> Optional[Tuple[str, float]]:
     Use Gemini to detect the language of ambiguous text.
     Returns (lang_code, confidence) or None on failure.
     """
-    cfg = _get_settings()
-    if not cfg or not getattr(cfg, "gemini_api_key", None):
+    if not settings.gemini_api_key:
         return None
     try:
         from google import genai
-        client = genai.Client(api_key=cfg.gemini_api_key)
+        client = genai.Client(api_key=settings.gemini_api_key)
         prompt = (
             f'What language is this text written in? Respond with ONLY the ISO 639-1 language code '
             f'(e.g. "hi" for Hindi, "mr" for Marathi, "en" for English, "ta" for Tamil, '
             f'"te" for Telugu, "bn" for Bengali). Text: "{text[:200]}"'
         )
         response = client.models.generate_content(
-            model=getattr(cfg, "gemini_model", "gemini-2.5-flash"),
+            model=settings.gemini_model,
             contents=prompt,
         )
         if response and response.text:

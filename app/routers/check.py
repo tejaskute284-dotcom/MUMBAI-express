@@ -1,4 +1,4 @@
-﻿"""
+"""
 API Check endpoint & Web demo interface.
 
 Provides:
@@ -15,12 +15,15 @@ Architecture & Security:
 - Decouples raw ingestion models from downstream structured API responses.
 """
 
-from __future__ import annotations
-
+import io
 import logging
+import os
+import tempfile
+import wave
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,6 +32,7 @@ from app.contracts.api import CheckAPIResponse, CheckRequest
 from app.contracts.models import IngestedMessage
 from app.core.constants import InputType
 from app.core.messages import DEMO_CONFIG
+from app.core.redaction import hash_identifier
 from app.features.explanation.formatter import (
     VERDICT_EMOJI,
     compute_evidence_strength,
@@ -80,7 +84,7 @@ def check_claim_api(req: CheckRequest) -> CheckAPIResponse:
     ingested = IngestedMessage(
         raw_text=raw_text,
         input_type=InputType.TEXT,
-        from_number="web_api_user",
+        from_number=hash_identifier("web_api_user"),
         original_body=raw_text,
     )
     result = run_pipeline(ingested)
@@ -147,13 +151,6 @@ async def ocr_endpoint(file: UploadFile = File(...)):
 
 @router.post("/api/voice", summary="Transcribe uploaded voice note or audio file")
 async def voice_endpoint(file: UploadFile = File(...)):
-    """Transcribe uploaded audio file into text for verification."""
-    import tempfile
-    import os
-    import io
-    import wave
-    import numpy as np
-
     try:
         content = await file.read()
         if not content:

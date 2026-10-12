@@ -22,6 +22,23 @@ logger = logging.getLogger(__name__)
 
 # LOOPHOLE-04: bounded TTL cache — max 1000 entries, 24h TTL
 _memory_cache: TTLCache = TTLCache(maxsize=1000, ttl=86400)
+_redis_client: Optional[object] = None
+
+
+def _get_redis_client() -> Optional[object]:
+    """Return reusable Upstash Redis client singleton, or None if disabled/unconfigured."""
+    global _redis_client
+    if _redis_client is not None:
+        return _redis_client
+    if settings.cache_backend == "redis" and settings.upstash_redis_url:
+        try:
+            from upstash_redis import Redis  # type: ignore
+            _redis_client = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
+            return _redis_client
+        except Exception as exc:
+            logger.warning("Failed to initialize Redis client: %s", exc)
+            return None
+    return None
 
 
 def _make_key(claim_text: str) -> str:
@@ -40,10 +57,9 @@ def cache_get(text: str) -> Optional[dict]:
     - Low latency: In-memory hits resolve in sub-millisecond range (<0.5ms).
     """
     key = _make_key(text)
-    if settings.cache_backend == "redis" and settings.upstash_redis_url:
+    r = _get_redis_client()
+    if r is not None:
         try:
-            from upstash_redis import Redis  # type: ignore
-            r = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
             val = r.get(key)
             if val:
                 logger.debug("Redis cache HIT for key=%s", key[:20])
@@ -63,10 +79,9 @@ def cache_set(text: str, value: dict, ttl: int = 86400) -> None:
     Writes to Redis (if configured) and in-memory cache.
     """
     key = _make_key(text)
-    if settings.cache_backend == "redis" and settings.upstash_redis_url:
+    r = _get_redis_client()
+    if r is not None:
         try:
-            from upstash_redis import Redis  # type: ignore
-            r = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
             r.setex(key, ttl, json.dumps(value))
             logger.debug("Redis cache_set key=%s ttl=%ds", key[:20], ttl)
             return
@@ -86,10 +101,9 @@ def _make_verdict_key(claim_text: str) -> str:
 def claim_cache_get(claim_text: str) -> Optional[dict]:
     """Return cached ClaimResult dict for this extracted claim text, or None."""
     key = _make_verdict_key(claim_text)
-    if settings.cache_backend == "redis" and settings.upstash_redis_url:
+    r = _get_redis_client()
+    if r is not None:
         try:
-            from upstash_redis import Redis  # type: ignore
-            r = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
             val = r.get(key)
             if val:
                 logger.debug("Redis claim_cache HIT for key=%s", key[:20])
@@ -103,10 +117,9 @@ def claim_cache_get(claim_text: str) -> Optional[dict]:
 def claim_cache_set(claim_text: str, value: dict, ttl: int = 86400) -> None:
     """Store a ClaimResult dict for this extracted claim text."""
     key = _make_verdict_key(claim_text)
-    if settings.cache_backend == "redis" and settings.upstash_redis_url:
+    r = _get_redis_client()
+    if r is not None:
         try:
-            from upstash_redis import Redis  # type: ignore
-            r = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
             r.setex(key, ttl, json.dumps(value))
             return
         except Exception as exc:

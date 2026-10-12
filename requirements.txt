@@ -1,4 +1,4 @@
-# SatyaSetu Backend - Python Dependencies
+# MUMBAI Express Backend - Python Dependencies
 # Requires Python 3.11+
 
 # FastAPI and Server
@@ -25,10 +25,9 @@ lxml[html_clean]>=5.2.2
 beautifulsoup4>=4.12.3
 
 # NLP and ML Models
-# BUG-16: fasttext-wheel required for language detection accuracy (MISSING-03)
-# On Windows: install Visual C++ Build Tools first (https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-# Then: pip install fasttext-wheel>=0.9.2
-# fasttext-wheel>=0.9.2
+# Required for fastText LID language detection (Linux/macOS/Docker).
+# Windows: Install Visual C++ Build Tools first, then: pip install fasttext-wheel
+fasttext-wheel>=0.9.2
 keybert>=0.8.5
 sentence-transformers>=3.0.0
 transformers>=4.41.0

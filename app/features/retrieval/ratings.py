@@ -163,7 +163,11 @@ def load_rating_mappings() -> Dict[Rating, List[str]]:
             enum_key = Rating(str_key)
             parsed[enum_key] = [p.lower().strip() for p in phrases]
         except ValueError:
-            pass  # Unknown rating key in YAML — skip silently.
+            logger.warning(
+                "Unknown rating key '%s' in verification.yaml — skipping. Valid keys: %s",
+                key,
+                [r.value for r in Rating],
+            )
 
     _rating_mappings_cache = parsed
     return _rating_mappings_cache

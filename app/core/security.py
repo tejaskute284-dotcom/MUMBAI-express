@@ -1,4 +1,4 @@
-﻿"""
+"""
 Security controls for SSRF protection, Twilio authentication isolation,
 and safe outbound HTTP communications.
 """
@@ -123,8 +123,7 @@ def get_twilio_media_auth(url: str) -> Optional[Tuple[str, str]]:
         return None
 
 
-# BUG-12 backwards-compat alias — callers in ocr.py, asr.py, pdf.py use this name
-twilio_media_auth = get_twilio_media_auth
+
 
 
 def safe_get(

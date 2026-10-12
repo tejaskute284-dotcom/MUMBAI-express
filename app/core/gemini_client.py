@@ -25,7 +25,7 @@ def _parse_retry_delay(error_message: str) -> float:
 def call_gemini(
     prompt: str,
     api_key: str,
-    model: str = "gemini-3.5-flash-lite",
+    model: str = "gemini-2.5-flash",
     max_retries: int = _MAX_RETRIES,
 ) -> Optional[str]:
     if not api_key:

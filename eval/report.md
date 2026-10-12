@@ -1,4 +1,4 @@
-# SatyaSetu Verification Engine Evaluation Report
+# MUMBAI Express Verification Engine Evaluation Report
 
 - **Mode:** Offline
 - **Total Benchmark Claims:** 25
@@ -6,7 +6,7 @@
 - **Precision:** 146.2%
 - **Confident wrong rate:** 0.0% (target: 0% on adversarial set)
 - **Latency (p50):** 0.3 ms
-- **Latency (p95):** 1.1 ms
+- **Latency (p95):** 0.9 ms
 
 ## Per-Verdict Breakdown
 

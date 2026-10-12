@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/main.py
 ───────────
 Canonical MUMBAI express application factory.
@@ -13,6 +13,7 @@ and app_main.py are thin shims that re-export the app object.
 
 from __future__ import annotations
 
+import os
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -153,7 +154,6 @@ _RATE_LIMIT_EXEMPT_PREFIXES = (
 
 # Per-IP: max requests per 60-second sliding window on API paths
 IP_RATE_LIMIT_PER_WINDOW = getattr(settings, "ip_rate_limit_per_window", 60)
-IP_RATE_LIMIT_PER_MINUTE = IP_RATE_LIMIT_PER_WINDOW
 IP_RATE_WINDOW_SECONDS = getattr(settings, "ip_rate_window_seconds", 60)
 
 
@@ -220,8 +220,7 @@ def create_app() -> FastAPI:
             _ip_rate_store[client_ip] = [
                 ts for ts in timestamps if now - ts < IP_RATE_WINDOW_SECONDS
             ]
-            effective_limit = min(IP_RATE_LIMIT_PER_WINDOW, IP_RATE_LIMIT_PER_MINUTE)
-            if len(_ip_rate_store[client_ip]) >= effective_limit:
+            if len(_ip_rate_store[client_ip]) >= IP_RATE_LIMIT_PER_WINDOW:
                 return JSONResponse(
                     status_code=429,
                     content={

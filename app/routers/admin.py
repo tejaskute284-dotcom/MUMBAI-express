@@ -114,7 +114,9 @@ def override_claim_verdict(
     """
     _require_api_key(x_api_key)
 
-    valid_verdicts = {"REFUTED", "SUPPORTED", "MISLEADING", "PARTIALLY_SUPPORTED", "UNVERIFIABLE", "OUTDATED"}
+    from app.core.constants import Verdict
+
+    valid_verdicts = {v.value for v in Verdict}
     if new_verdict.upper() not in valid_verdicts:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

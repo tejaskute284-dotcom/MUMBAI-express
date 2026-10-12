@@ -204,7 +204,7 @@ async def twilio_webhook(
     if payload.MessageSid and _is_duplicate_message(payload.MessageSid):
         logger.warning("[%s] Duplicate MessageSid=%s received. Dropping duplicate pipeline run.", request_id, payload.MessageSid)
         return PlainTextResponse(
-            content=_twiml_message("Your message is already being processed."),
+            content=_twiml_message_fn("Your message is already being processed."),
             status_code=200,
             media_type="application/xml",
         )
@@ -214,7 +214,7 @@ async def twilio_webhook(
         logger.warning("[%s] Rate limit exceeded for sender=%s…", request_id, sender_hash)
         # BUG-13: must return HTTP 200 — Twilio retries on any non-200 response
         return PlainTextResponse(
-            content=_twiml_message(
+            content=_twiml_message_fn(
                 "⏳ You've sent too many messages. Please wait a few minutes and try again."
             ),
             status_code=200,
@@ -235,13 +235,8 @@ async def twilio_webhook(
         logger.error("[%s] Ingestion error: %s", request_id, exc, exc_info=True)
         return _twiml_error("Could not process your message. Please try again.")
 
-    # ── Step 1: Immediate acknowledgement ─────────────────────────────────────
+    # ── Step 1: Immediate acknowledgement message ─────────────────────────────
     ack_message = "Checking this, one moment..."
-    threading.Thread(
-        target=send_twilio_message,
-        args=(payload.From, ack_message),
-        daemon=True,
-    ).start()
 
     # ── Step 2: Offload pipeline to non-blocking background task ──────────────
     def _execute_pipeline_and_reply(ingested_msg: IngestedMessage, to_number: str, req_id: str) -> None:
@@ -270,7 +265,7 @@ async def twilio_webhook(
 
     # Webhook handler returns immediately with TwiML acknowledgement (< 2 seconds)
     return PlainTextResponse(
-        content=_twiml_message(ack_message),
+        content=_twiml_message_fn(ack_message),
         status_code=200,
         media_type="application/xml",
     )
@@ -278,15 +273,10 @@ async def twilio_webhook(
 
 # ── TwiML helpers ──────────────────────────────────────────────────────────────
 
-def _twiml_message(body: str) -> str:
-    """Delegate to app.core.twiml for testability."""
-    return _twiml_message_fn(body)
-
-
 def _twiml_error(message: str) -> PlainTextResponse:
     """Return a safe TwiML error response."""
     return PlainTextResponse(
-        content=_twiml_message(f"⚠️ {message}"),
+        content=_twiml_message_fn(f"⚠️ {message}"),
         status_code=200,  # Twilio requires 200 even on errors to avoid retry storms
         media_type="application/xml",
     )

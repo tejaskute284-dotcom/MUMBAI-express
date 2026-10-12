@@ -1,4 +1,4 @@
-﻿"""
+"""
 Centralized application settings loaded from environment variables and .env file.
 Uses Pydantic Settings v2.
 """
@@ -77,8 +77,8 @@ class Settings(BaseSettings):
         description="Google Gemini Flash API key",
     )
     gemini_model: str = Field(
-        default="gemini-3.5-flash-lite",
-        description="Gemini model identifier",
+        default="gemini-2.5-flash",
+        description="Gemini model identifier (default: gemini-2.5-flash)",
     )
 
 

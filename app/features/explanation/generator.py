@@ -24,22 +24,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Emoji labels for verdicts
-VERDICT_EMOJI: dict = {
-    Verdict.SUPPORTED: "✅",
-    Verdict.REFUTED: "❌",
-    Verdict.PARTIALLY_SUPPORTED: "⚠️",
-    Verdict.OUTDATED: "⏳",
-    Verdict.UNVERIFIABLE: "❓",
-}
-
-VERDICT_LABEL: dict = {
-    Verdict.SUPPORTED: "SUPPORTED",
-    Verdict.REFUTED: "REFUTED",
-    Verdict.PARTIALLY_SUPPORTED: "PARTIALLY_SUPPORTED",
-    Verdict.OUTDATED: "OUTDATED",
-    Verdict.UNVERIFIABLE: "UNVERIFIABLE",
-}
+from app.features.explanation.formatter import VERDICT_EMOJI, VERDICT_LABEL
 
 
 HEALTH_KEYWORDS = {

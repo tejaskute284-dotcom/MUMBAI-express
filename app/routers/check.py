@@ -1,4 +1,4 @@
-"""
+﻿"""
 API Check endpoint & Web demo interface.
 
 Provides:
@@ -64,7 +64,7 @@ def _read_whatsapp_page() -> str:
             return index_path.read_text(encoding="utf-8")
         except Exception as exc:
             logger.error("Failed to read web/whatsapp/index.html: %s", exc)
-    return _read_html_page("whatsapp.html", "SatyaSetu — WhatsApp Web AI Fact-Checking Bot")
+    return _read_html_page("whatsapp.html", "MUMBAI express — WhatsApp Web AI Fact-Checking Bot")
 
 
 @router.post("/api/check", response_model=CheckAPIResponse, summary="Verify claim JSON endpoint")
@@ -251,7 +251,7 @@ async def pdf_endpoint(file: UploadFile = File(...)):
 @router.get("/whatsapp", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Screen")
 @router.get("/demo", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Demo Screen")
 def whatsapp_portal_page() -> str:
-    """Realistic WhatsApp Web Desktop Screen with SatyaSetu AI Bot."""
+    """Realistic WhatsApp Web Desktop Screen with MUMBAI express AI Bot."""
     return _read_whatsapp_page()
 
 

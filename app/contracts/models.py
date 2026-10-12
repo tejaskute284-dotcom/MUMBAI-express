@@ -1,5 +1,5 @@
-"""
-Pydantic v2 data contracts for SatyaSetu pipeline stages.
+﻿"""
+Pydantic v2 data contracts for MUMBAI express pipeline stages.
 Guarantees clean schema validation and type safety across all layer boundaries.
 """
 

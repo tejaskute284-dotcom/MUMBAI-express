@@ -1,4 +1,4 @@
-"""
+﻿"""
 Unit tests for app.contracts and app.core modules.
 Verifies contract validation (good and bad instances), redaction, logging filter,
 StageTimer, constants, and settings loading.
@@ -121,7 +121,7 @@ def test_check_response_contract():
         claim_results=[],
         overall_verdict=Verdict.UNVERIFIABLE,
         explanation="No reliable evidence found.",
-        formatted_reply="*SatyaSetu Verdict:* UNVERIFIABLE",
+        formatted_reply="*MUMBAI express Verdict:* UNVERIFIABLE",
         language="en",
     )
     assert good.overall_verdict == Verdict.UNVERIFIABLE

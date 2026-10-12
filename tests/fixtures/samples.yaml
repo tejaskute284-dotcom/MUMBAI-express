@@ -1,4 +1,4 @@
-# Samples fixture for SatyaSetu test suite
+﻿# Samples fixture for MUMBAI express test suite
 pm_kisan_forward:
   text: "यह मैसेज फॉरवर्ड करो, PM Kisan का पैसा मिलेगा"
   language: "hi"

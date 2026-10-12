@@ -1,5 +1,5 @@
-"""
-Integration smoke tests for SatyaSetu (Wave 9).
+﻿"""
+Integration smoke tests for MUMBAI express (Wave 9).
 Tests end-to-end flows:
   1. IngestedMessage -> run_pipeline -> CheckResponse
   2. Multilingual / Hindi / Hinglish claim processing

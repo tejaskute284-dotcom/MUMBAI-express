@@ -1,7 +1,7 @@
-"""
+﻿"""
 app/main.py
 ───────────
-Canonical SatyaSetu application factory.
+Canonical MUMBAI express application factory.
 
 Usage (canonical):
     uvicorn app.main:app --reload --port 8000
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     SHUTDOWN: Python GC handles cleanup; no explicit teardown needed.
     """
     logger.info("=" * 60)
-    logger.info("SatyaSetu backend starting up…")
+    logger.info("MUMBAI express backend starting up…")
     logger.info("Environment: %s | Port: %s", settings.env, settings.port)
     logger.info("=" * 60)
 
@@ -123,7 +123,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.model_status = model_status
 
     logger.info("=" * 60)
-    logger.info("SatyaSetu startup complete. Accepting requests.")
+    logger.info("MUMBAI express startup complete. Accepting requests.")
     logger.info("  GET  /health           — liveness probe")
     logger.info("  GET  /health/detailed  — model status")
     logger.info("  POST /webhook/twilio   — WhatsApp inbound")
@@ -133,7 +133,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield  # ── Application runs here ─────────────────────────────────────────
 
-    logger.info("SatyaSetu backend shutting down…")
+    logger.info("MUMBAI express backend shutting down…")
 
 
 # ── Rate limiting state ───────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-"""
-SatyaSetu — Multilingual WhatsApp Fact-Checking System.
+﻿"""
+MUMBAI express — Multilingual WhatsApp Fact-Checking System.
 
 End-to-end misinformation detection for India's messaging ecosystem.
 Ingests text, voice, image, PDF, and URL payloads and returns

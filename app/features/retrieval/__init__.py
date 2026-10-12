@@ -1,5 +1,5 @@
-"""
-Evidence retrieval feature package for SatyaSetu.
+﻿"""
+Evidence retrieval feature package for MUMBAI express.
 
 Implements a five-tier trust hierarchy for evidence sourcing:
 - Tier 1 (IFCN): Google Fact Check Tools API — professional, peer-reviewed fact checks.

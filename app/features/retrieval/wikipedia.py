@@ -1,4 +1,4 @@
-"""
+﻿"""
 app/features/retrieval/wikipedia.py
 ─────────────────────────────────────
 Wikipedia evidence retriever using official Wikipedia REST API.
@@ -88,7 +88,7 @@ def search_wikipedia(query: str, lang: str = "en") -> List[EvidenceItem]:
         }
         search_url = f"{WIKI_SEARCH_API}?{urllib.parse.urlencode(search_params)}"
         # Bot-identification User-Agent per Wikipedia API etiquette guidelines.
-        headers = {"User-Agent": "SatyaSetu/1.0 (+https://satyasetu.org; factcheck-bot)"}
+        headers = {"User-Agent": "MUMBAI express/1.0 (+https://MUMBAI express.org; factcheck-bot)"}
 
         search_resp = safe_get(search_url, timeout=5, headers=headers)
         if search_resp.status_code != 200:

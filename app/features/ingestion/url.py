@@ -1,4 +1,4 @@
-"""
+﻿"""
 Article URL text extraction using newspaper3k with Open Graph meta fallback.
 
 Guarantees:
@@ -44,7 +44,7 @@ def fetch_og_description(url: str) -> str:
         response = safe_get(
             url,
             timeout=REQUEST_TIMEOUT,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; SatyaSetu/1.0)"},
+            headers={"User-Agent": "Mozilla/5.0 (compatible; MUMBAI express/1.0)"},
         )
         html = response.text
 

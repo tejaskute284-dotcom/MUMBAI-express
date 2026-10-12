@@ -1,38 +1,38 @@
 """
-Custom domain exceptions for SatyaSetu.
+Custom domain exceptions for MUMBAI express.
 """
 
 
-class SatyaSetuError(Exception):
+class MumbaiExpressError(Exception):
     """
-    Base exception for all SatyaSetu domain errors.
+    Base exception for all MUMBAI express domain errors.
     Enables centralized catch-and-recover error boundaries in webhook & REST layers
     to guarantee graceful responses (neutral fallback text) instead of unhandled 500 crashes.
     """
     pass
 
 
-class SSRFSecurityError(SatyaSetuError):
+class SSRFSecurityError(MumbaiExpressError):
     """Raised when an outbound URL points to private or restricted network addresses."""
     pass
 
 
-class IngestionError(SatyaSetuError):
+class IngestionError(MumbaiExpressError):
     """Raised when media extraction or OCR/ASR fails."""
     pass
 
 
-class LanguageDetectionError(SatyaSetuError):
+class LanguageDetectionError(MumbaiExpressError):
     """Raised when language detection fails or confidence is too low."""
     pass
 
 
-class TranslationError(SatyaSetuError):
+class TranslationError(MumbaiExpressError):
     """Raised when machine translation fails."""
     pass
 
 
-class RetrievalError(SatyaSetuError):
+class RetrievalError(MumbaiExpressError):
     """Raised when evidence search or fact-check API fails."""
     pass
 
@@ -42,16 +42,16 @@ class RetrievalBudgetExceeded(RetrievalError):
     pass
 
 
-class VerificationError(SatyaSetuError):
+class VerificationError(MumbaiExpressError):
     """Raised when verification rule engine fails."""
     pass
 
 
-class ExplanationError(SatyaSetuError):
+class ExplanationError(MumbaiExpressError):
     """Raised when response generation or JSON schema validation fails."""
     pass
 
 
-class RateLimitExceededError(SatyaSetuError):
+class RateLimitExceededError(MumbaiExpressError):
     """Raised when user exceeds allowed requests per minute."""
     pass

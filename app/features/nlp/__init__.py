@@ -1,5 +1,5 @@
-"""
-NLP feature package for SatyaSetu.
+﻿"""
+NLP feature package for MUMBAI express.
 
 Provides a composable pipeline of language processing capabilities:
 - Language Detection: Script + ISO-639 code identification with Hinglish awareness.

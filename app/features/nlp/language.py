@@ -1,4 +1,4 @@
-"""
+﻿"""
 app/features/nlp/language.py
 ─────────────────────────────
 Language and script identification for Indic and English text inputs.
@@ -18,7 +18,7 @@ the fastText model is absent (models/lid.176.bin not found) the script-based
 fallback still correctly routes Devanagari, Bengali, Tamil, and Telugu inputs.
 
 Indic-first design:  Hindi, Marathi, Bengali, Tamil, and Telugu are first-class
-citizens because SatyaSetu's primary user base communicates in these languages.
+citizens because MUMBAI express's primary user base communicates in these languages.
 """
 
 from __future__ import annotations

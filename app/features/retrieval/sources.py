@@ -1,4 +1,4 @@
-"""
+﻿"""
 app/features/retrieval/sources.py
 ──────────────────────────────────
 Source domain classification and tier assignment.
@@ -6,7 +6,7 @@ Loads domain tiers from config/sources.yaml to categorize evidence reliability.
 
 Tier system
 ────────────
-Evidence credibility in SatyaSetu is expressed as a five-level tier:
+Evidence credibility in MUMBAI express is expressed as a five-level tier:
 
   Tier 1 (IFCN)        — International Fact Checking Network certified outlets
                           (AltNews, BoomLive, Factly, PolitiFact, Snopes, Reuters…).

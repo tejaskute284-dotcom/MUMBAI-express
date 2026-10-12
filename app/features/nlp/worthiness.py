@@ -1,4 +1,4 @@
-"""
+﻿"""
 app/features/nlp/worthiness.py
 ───────────────────────────────
 Check-worthiness scorer for prioritizing factual claims over greetings,
@@ -6,7 +6,7 @@ questions, and subjective opinions.
 
 Purpose
 ────────
-Not all WhatsApp messages sent to SatyaSetu are fact-checkable claims.
+Not all WhatsApp messages sent to MUMBAI express are fact-checkable claims.
 This module acts as a routing gate: texts with low worthiness scores are
 rejected early (saving downstream API calls) with a user-friendly message
 explaining why the bot cannot verify the input.

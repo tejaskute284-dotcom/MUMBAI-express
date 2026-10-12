@@ -1,4 +1,4 @@
-"""
+﻿"""
 Centralized application settings loaded from environment variables and .env file.
 Uses Pydantic Settings v2.
 """
@@ -147,7 +147,7 @@ class Settings(BaseSettings):
 
     # Privacy & Salted Hashing (F28)
     sender_hash_secret: str = Field(
-        default="satyasetu-prod-salt-secret-2026",
+        default="MUMBAI express-prod-salt-secret-2026",
         description="HMAC secret key used for salted hashing of sender phone numbers",
     )
     claims_retention_days: int = Field(

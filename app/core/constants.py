@@ -1,5 +1,5 @@
-"""
-System-wide enums and constants for SatyaSetu.
+﻿"""
+System-wide enums and constants for MUMBAI express.
 
 Defines foundational vocabulary and typing contracts across the system:
 - InputType: Permitted inbound payload modalities for ingestion demuxing.

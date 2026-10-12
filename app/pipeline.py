@@ -1,4 +1,4 @@
-"""
+﻿"""
 End-to-end pipeline orchestrator (Wave 8).
 
 Glues all seven layers together into a single synchronous function:
@@ -64,7 +64,7 @@ def _derive_overall_verdict(claim_results: list[ClaimResult]) -> Verdict:
 
 def run_pipeline(message: IngestedMessage) -> CheckResponse:
     """
-    Run the complete SatyaSetu fact-checking pipeline for one incoming message.
+    Run the complete MUMBAI express fact-checking pipeline for one incoming message.
 
     Pipeline stages:
       1. Language detection

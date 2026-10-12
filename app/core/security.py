@@ -1,4 +1,4 @@
-"""
+﻿"""
 Security controls for SSRF protection, Twilio authentication isolation,
 and safe outbound HTTP communications.
 """
@@ -154,7 +154,7 @@ def safe_get(
         should_send_auth = auth is not None and get_twilio_media_auth(current_url) is not None
         req_auth = auth if should_send_auth else None
 
-        req_headers = {"User-Agent": "SatyaSetu/1.0 (+https://satyasetu.org)"}
+        req_headers = {"User-Agent": "MUMBAI express/1.0 (+https://MUMBAI express.org)"}
         if headers:
             req_headers.update(headers)
 

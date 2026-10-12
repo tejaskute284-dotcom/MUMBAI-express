@@ -154,7 +154,7 @@ class TestFormatWhatsappReply:
         assert isinstance(reply, str)
         assert len(reply) > 0
 
-    def test_contains_satyasetu_header(self):
+    def test_contains_mumbai_express_header(self):
         response = _make_response()
         reply = format_whatsapp_reply(response)
         assert "MUMBAI express" in reply

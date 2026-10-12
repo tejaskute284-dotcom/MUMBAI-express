@@ -1,9 +1,9 @@
-"""
+﻿"""
 app/core/messages.py
 ────────────────────
 Centralized bot message strings (ADR-010).
 
-All user-visible text sent by the SatyaSetu bot via Twilio is defined here
+All user-visible text sent by the MUMBAI express bot via Twilio is defined here
 so that copy changes never require touching webhook logic, and the demo UI
 can fetch them via GET /api/demo/config.
 

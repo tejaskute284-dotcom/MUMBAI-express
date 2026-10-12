@@ -1,5 +1,5 @@
-"""
-Ingestion feature package for SatyaSetu.
+﻿"""
+Ingestion feature package for MUMBAI express.
 
 Exposes a unified `ingest()` entrypoint that dispatches to modality-specific extractors:
 - `transcribe_audio`: OpenAI Whisper ASR for voice notes.

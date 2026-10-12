@@ -51,26 +51,43 @@ TRANSLATION_MODELS: Dict[str, str] = {
 _translation_cache: Dict[str, Tuple[Any, Any]] = {}
 
 
+def translate_with_mymemory(text: str, source_lang: str) -> Optional[str]:
+    """Translate Indic text to English using free MyMemory gateway."""
+    try:
+        import json
+        import urllib.parse
+        import urllib.request
+
+        base_code = source_lang.split("-")[0].lower()
+        if base_code in ("hi", "mr", "ta", "te", "bn"):
+            query_enc = urllib.parse.urlencode({"q": text.strip()[:400], "langpair": f"{base_code}|en"})
+            req_url = f"https://api.mymemory.translated.net/get?{query_enc}"
+            req = urllib.request.Request(req_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=3.5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                text_out = data.get("responseData", {}).get("translatedText")
+                if text_out and not text_out.startswith("MYMEMORY WARNING"):
+                    return text_out.strip()
+    except Exception as exc:
+        logger.debug("MyMemory translate to English failed for '%s': %s", source_lang, exc)
+
+    return None
+
+
 def translate_with_gemini(text: str, lang_code: str = "") -> Optional[str]:
     """
     Translate Indic or Hinglish text into English using Gemini.
     Returns translated English text or None on failure.
-
-    Security: text is run through redact_for_external() before dispatch so
-    PII (phone numbers, Aadhaar, email addresses) never leave the service.
-    The prompt instructs Gemini to output ONLY the translation to prevent
-    prompt injection attacks from embedding instructions in user-supplied text.
+    Uses centralized call_gemini() with automatic 429 retry+backoff.
     """
     if not settings.gemini_api_key:
         return None
 
     try:
-        from google import genai
         from app.core.redaction import redact_for_external
+        from app.core.gemini_client import call_gemini
 
-        # Strip PII before the text exits the service boundary.
         redacted_text = redact_for_external(text)
-        client = genai.Client(api_key=settings.gemini_api_key)
         lang_hint = f"from language code '{lang_code}' " if lang_code and lang_code != "und" else ""
         prompt = (
             f"Translate the following text {lang_hint}accurately into clear, natural English. "
@@ -78,14 +95,9 @@ def translate_with_gemini(text: str, lang_code: str = "") -> Optional[str]:
             "Output ONLY the English translation, with no explanation or commentary:\n\n"
             f"{redacted_text}"
         )
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
-        if response and response.text:
-            cleaned = response.text.strip().strip('"').strip("'")
-            if cleaned:
-                return cleaned
+        result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+        if result:
+            return result.strip('"').strip("'")
     except Exception as exc:
         logger.warning("Gemini translation failed for '%s': %s", lang_code, exc)
 
@@ -132,13 +144,19 @@ def translate_to_english(
     if not cleaned or lang_code == "en":
         return cleaned, False
 
-    # Handle Hinglish translation directly via Gemini.
-    # M2M100 has no explicit hi-Latn source language token.
-    if lang_code == "hi-Latn":
-        gemini_result = translate_with_gemini(cleaned, "hi-Latn")
+    # Handle Hinglish and Romanized Marathi via Gemini.
+    # M2M100 has no explicit hi-Latn / mr-Latn source language tokens.
+    if lang_code in ("hi-Latn", "mr-Latn"):
+        lang_display = "Hinglish (Romanized Hindi)" if lang_code == "hi-Latn" else "Romanized Marathi"
+        gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
-        logger.info("Hinglish translation fallback to original text.")
+        # Also try MyMemory with base code
+        base = "hi" if lang_code == "hi-Latn" else "mr"
+        mymem = translate_with_mymemory(cleaned, base)
+        if mymem:
+            return mymem, False
+        logger.info("%s translation fallback to original text.", lang_display)
         return cleaned, True
 
     # Check local M2M100 model availability for this language code.
@@ -183,10 +201,13 @@ def translate_to_english(
         if isinstance(decoded, str) and decoded.strip():
             return decoded.strip(), False
 
-        # Fallback to Gemini if local output was empty (degenerate beam search result).
         gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
+
+        mymemory_result = translate_with_mymemory(cleaned, lang_code)
+        if mymemory_result:
+            return mymemory_result, False
 
         return cleaned, True
 
@@ -195,4 +216,10 @@ def translate_to_english(
         gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
+
+        mymemory_result = translate_with_mymemory(cleaned, lang_code)
+        if mymemory_result:
+            return mymemory_result, False
+
         return cleaned, True
+

@@ -29,6 +29,19 @@ from typing import Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Module-level reference to app settings (lazy to avoid circular imports).
+_settings = None
+
+def _get_settings():
+    global _settings
+    if _settings is None:
+        try:
+            from app.core.config import settings as _s
+            _settings = _s
+        except Exception:
+            pass
+    return _settings
+
 # Module-level singleton for the fastText LID model.
 # Injected by app.main lifespan and overrideable in tests via set_ft_model().
 _ft_model: Any = None
@@ -54,6 +67,28 @@ HINGLISH_VOCABULARY = {
     "apne", "sabko", "bhejo", "milega", "milegi", "milenge", "kripya", "dekho",
     "dekhlo", "suno", "kisi", "kya", "kyun", "kab", "kahan", "kaise", "batao",
     "paise", "paisa", "rupaye", "rupayee", "khabar", "suchna", "sarkari",
+}
+
+# ── Romanized Marathi vocabulary ──────────────────────────────────────────────
+# Common Romanized Marathi (Marathi written in Latin script) markers.
+# These are Marathi-specific words NOT found in standard Hindi.
+# Threshold: ≥2 distinct matches triggers mr-Latn classification.
+ROMANIZED_MARATHI_VOCABULARY = {
+    # Verbs / auxiliary
+    "aahe", "ahe", "ahet", "mhanje", "mhunun", "mhantoy", "mhantaat",
+    "jhalay", "jhale", "jhaali", "zalay", "zale", "zali",
+    "hotay", "hote", "hoti", "hotat", "aala", "aali", "aale",
+    "geloy", "gela", "geli", "gele", "mela", "meli", "mele",
+    "nahi", "naahi", "naste", "navhte", "navhta",
+    # Common nouns / particles unique to Marathi
+    "aapan", "amhi", "tumhi", "tyanche", "tyani", "tyachya",
+    "aaplyala", "aplya", "aplya", "aplyas",
+    "pण", "pan", "tari", "matra", "kaaran",
+    "ithey", "ithe", "tevha", "tar", "kas", "kay",
+    # Unique Marathi words
+    "saangto", "saangte", "baghto", "baghte",
+    "khup", "thoda", "jaast", "kadhi",
+    "marathi", "mumbai", "pune", "nashik",
 }
 
 # ── Script Unicode ranges ─────────────────────────────────────────────────────
@@ -111,6 +146,57 @@ def is_hinglish(text: str) -> bool:
     return len(matching_tokens) >= 2
 
 
+def is_romanized_marathi(text: str) -> bool:
+    """
+    Heuristic check for Marathi written in Latin script (Romanized Marathi).
+    Checks if Latin script dominates and ≥2 distinct Marathi-specific tokens appear.
+
+    Marathi markers are grammatically distinct from Hindi — e.g., 'ahe'/'aahe'
+    (Marathi for 'is') vs 'hai' (Hindi for 'is'), 'mele'/'gele' (Marathi past tense).
+    """
+    script = detect_script(text)
+    if script != "Latin":
+        return False
+
+    tokens = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+    if not tokens:
+        return False
+
+    matching_tokens = set(tokens).intersection(ROMANIZED_MARATHI_VOCABULARY)
+    return len(matching_tokens) >= 2
+
+
+def detect_language_via_gemini(text: str) -> Optional[Tuple[str, float]]:
+    """
+    Use Gemini to detect the language of ambiguous text.
+    Returns (lang_code, confidence) or None on failure.
+    """
+    cfg = _get_settings()
+    if not cfg or not getattr(cfg, "gemini_api_key", None):
+        return None
+    try:
+        from google import genai
+        client = genai.Client(api_key=cfg.gemini_api_key)
+        prompt = (
+            f'What language is this text written in? Respond with ONLY the ISO 639-1 language code '
+            f'(e.g. "hi" for Hindi, "mr" for Marathi, "en" for English, "ta" for Tamil, '
+            f'"te" for Telugu, "bn" for Bengali). Text: "{text[:200]}"'
+        )
+        response = client.models.generate_content(
+            model=getattr(cfg, "gemini_model", "gemini-2.5-flash"),
+            contents=prompt,
+        )
+        if response and response.text:
+            code = response.text.strip().lower().strip('"').split()[0]
+            # Validate it's a known code
+            if code in ("hi", "mr", "ta", "te", "bn", "en", "gu", "pa", "kn", "ml"):
+                logger.info("Gemini detected language: '%s' for text: '%.40s'", code, text)
+                return code, 0.88
+    except Exception as exc:
+        logger.debug("Gemini language detection failed: %s", exc)
+    return None
+
+
 def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, float]:
     """
     Detect the language of the input text.
@@ -133,7 +219,12 @@ def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, flo
     if not cleaned:
         return "en", 1.0
 
-    # 1. Check for Hinglish (Latin script + Romanized Hindi vocabulary)
+    # 1a. Check for Romanized Marathi (Latin script + Marathi-specific vocabulary)
+    if is_romanized_marathi(cleaned):
+        logger.info("Detected Romanized Marathi via vocabulary heuristic.")
+        return "mr-Latn", 0.88
+
+    # 1b. Check for Hinglish (Latin script + Romanized Hindi vocabulary)
     if is_hinglish(cleaned):
         logger.info("Detected Hinglish via vocabulary heuristic.")
         return "hi-Latn", 0.90
@@ -177,5 +268,11 @@ def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, flo
         return "ta", 0.85
     elif script == "Telugu":
         return "te", 0.85
+
+    # 4. Final fallback: Gemini-powered detection for ambiguous Latin-script text
+    # This catches Romanized Indic text not matched by vocabulary heuristics.
+    gemini_result = detect_language_via_gemini(cleaned)
+    if gemini_result:
+        return gemini_result
 
     return "en", 0.80

@@ -127,6 +127,7 @@ def _gemini_explanation(result: ClaimResult) -> str | None:
     ev_text = _top_evidence_text(result, max_items=5)
 
     from app.core.redaction import redact_for_external
+    from app.core.gemini_client import call_gemini
     redacted_claim = redact_for_external(result.claim[:300])
 
     prompt = textwrap.dedent(f"""
@@ -154,23 +155,9 @@ def _gemini_explanation(result: ClaimResult) -> str | None:
         Write the explanation now:
     """).strip()
 
-
-    try:
-        from google import genai
-        client = genai.Client(api_key=settings.gemini_api_key)
-        response = client.models.generate_content(model=settings.gemini_model, contents=prompt)
-        if response and response.text:
-            cleaned = (
-                response.text.strip()
-                .replace("**", "")
-                .replace("*", "")
-                .replace("#", "")
-                .replace("`", "")
-            )
-            return cleaned
-    except Exception as exc:
-        logger.warning("Gemini explanation generation failed: %s", exc)
-
+    result_text = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+    if result_text:
+        return result_text.replace("**", "").replace("*", "").replace("#", "").replace("`", "")
     return None
 
 
@@ -263,18 +250,17 @@ def _gemini_quick_context(claim: str, verdict_label: str) -> str | None:
     if not settings.gemini_api_key:
         return None
     try:
-        from google import genai
         from app.core.redaction import redact_for_external
-        client = genai.Client(api_key=settings.gemini_api_key)
+        from app.core.gemini_client import call_gemini
         prompt = (
             f'A WhatsApp claim says: "{redact_for_external(claim[:200])}"\n'
             f'Verdict: {verdict_label}\n'
             f'Write exactly 2 sentences: (1) what the claim says and why it is {verdict_label}, '
             f'(2) what the actual fact is. Plain text, no formatting.'
         )
-        response = client.models.generate_content(model=settings.gemini_model, contents=prompt)
-        if response and response.text:
-            return response.text.strip().replace("**", "").replace("*", "")
+        result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+        if result:
+            return result.replace("**", "").replace("*", "")
     except Exception as exc:
         logger.debug("Quick context Gemini call failed: %s", exc)
     return None

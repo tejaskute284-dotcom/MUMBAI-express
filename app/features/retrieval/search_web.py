@@ -185,25 +185,78 @@ def _search_tavily(query: str, api_key: str) -> List[EvidenceItem]:
     return items
 
 
+def _search_google_news_rss(query: str) -> List[EvidenceItem]:
+    """
+    Fetch live news items from Google News RSS feed for real-time fact checks and reporting.
+    Runs as a zero-credential live search provider when third-party search keys are not set.
+    """
+    import urllib.parse
+    import xml.etree.ElementTree as ET
+
+    search_query = query if "fact check" in query.lower() else f"fact check {query}"
+    encoded = urllib.parse.quote(search_query)
+    rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=en-IN&gl=IN&ceid=IN:en"
+
+    items: List[EvidenceItem] = []
+    try:
+        resp = requests.get(rss_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=6.0)
+        if resp.status_code != 200:
+            return items
+
+        root = ET.fromstring(resp.content)
+        xml_items = root.findall(".//item")
+
+        for r in xml_items[:6]:
+            title_elem = r.find("title")
+            link_elem = r.find("link")
+            date_elem = r.find("pubDate")
+
+            title = title_elem.text if title_elem is not None and title_elem.text else ""
+            url = link_elem.text if link_elem is not None and link_elem.text else ""
+            pub_date = date_elem.text if date_elem is not None else None
+
+            if not url:
+                continue
+
+            # Detect source domain from title suffix (e.g., 'Headline - BOOM Live')
+            source_domain = ""
+            if " - " in title:
+                source_domain = title.rsplit(" - ", 1)[-1].strip().lower().replace(" ", "") + ".com"
+
+            tier = classify_domain(source_domain or url)
+
+            items.append(
+                EvidenceItem(
+                    url=url,
+                    title=title,
+                    snippet=title,
+                    source_domain=source_domain or "news.google.com",
+                    tier=tier,
+                    rating=Rating.UNVERIFIED,
+                    publish_date=pub_date,
+                    score=0.82,
+                )
+            )
+    except Exception as exc:
+        logger.warning("Live news RSS retrieval failed for query '%s': %s", query, exc)
+
+    return items
+
+
 def search_web(query: str) -> List[EvidenceItem]:
     """
-    Search the web for claims or evidence using the configured provider (Brave or Tavily).
+    Search the web for claims or evidence using the configured provider (Brave, Tavily, or Live Google News RSS).
     Returns a list of structured EvidenceItem objects. Never raises exceptions.
-
-    Caller contract: this function is safe to call unconditionally.  An absent
-    API key, network timeout, or provider error all return an empty list so the
-    pipeline can continue with partial evidence rather than aborting.
     """
-    if not settings.search_api_key:
-        logger.debug("Search API key not configured. Skipping web search.")
-        return []
-
     if not query or not query.strip():
         return []
 
     # Redact PII from query before sending to external search provider.
     from app.core.redaction import redact_for_external
     cleaned_query = redact_for_external(query.strip())
+
+    if not settings.search_api_key:
+        return _search_google_news_rss(cleaned_query)
 
     try:
         provider = (settings.search_provider or "brave").lower().strip()
@@ -212,8 +265,8 @@ def search_web(query: str) -> List[EvidenceItem]:
         elif provider == "tavily":
             return _search_tavily(cleaned_query, settings.search_api_key)
         else:
-            logger.warning("Unsupported search provider: %s", provider)
-            return []
+            return _search_google_news_rss(cleaned_query)
     except Exception as exc:
         logger.warning("Web search failed for query '%s': %s", query, exc)
-        return []
+        return _search_google_news_rss(cleaned_query)
+

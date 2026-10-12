@@ -158,33 +158,72 @@ def _format_single_claim(result: ClaimResult, idx: int, total: int, lang: str = 
 
 def translate_explanation_paragraph(text: str, target_lang: str) -> str:
     """
-    Translate only the free-text explanation paragraph using Gemini.
-    Verdict labels, fixed phrases, and citations NEVER pass through machine translation.
+    Translate the free-text explanation paragraph into the user's target language (Hindi, Marathi, etc.).
+    Uses Gemini when configured, with online translation gateway fallback.
     """
     if not target_lang or target_lang.startswith("en") or not text.strip():
         return text
 
-    if not settings.gemini_api_key:
-        return text
+    # 1. Try Gemini with retry+backoff
+    if settings.gemini_api_key:
+        try:
+            from app.core.redaction import redact_for_external
+            from app.core.gemini_client import call_gemini
 
+            prompt = (
+                f"Translate the following fact-check explanation into language '{target_lang}'. "
+                "Output ONLY the translated paragraph text without commentary or markdown headers:\n\n"
+                f"{redact_for_external(text)}"
+            )
+            result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+            if result:
+                return result
+        except Exception as exc:
+            logger.warning("Explanation paragraph translation via Gemini failed for '%s': %s", target_lang, exc)
+
+    # 2. Online Translation Gateway Fallback
     try:
-        from google import genai
-        from app.core.redaction import redact_for_external
+        import urllib.parse
+        import urllib.request
+        import json
 
-        client = genai.Client(api_key=settings.gemini_api_key)
-        prompt = (
-            f"Translate the following fact-check explanation into language '{target_lang}'. "
-            "Output ONLY the translated paragraph text without commentary or markdown headers:\n\n"
-            f"{redact_for_external(text)}"
-        )
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
-        if response and response.text:
-            return response.text.strip()
+        base_code = target_lang.split("-")[0].lower()
+        if base_code in ("hi", "mr", "ta", "te", "bn"):
+            # Split into sentences or lines to maintain quality
+            lines = [l.strip() for l in text.split("\n") if l.strip()]
+            translated_lines = []
+            for line in lines:
+                if line.startswith("•") or line.startswith("http") or len(line) < 3:
+                    translated_lines.append(line)
+                    continue
+                # Localize common structural prefixes
+                clean_line = line
+                prefix = ""
+                if line.startswith("Verdict:"):
+                    prefix = "निर्णय: " if base_code in ("hi", "mr") else "Verdict: "
+                    clean_line = line[8:].strip()
+                elif line.startswith("Claim:"):
+                    prefix = "दावा: " if base_code in ("hi", "mr") else "Claim: "
+                    clean_line = line[6:].strip()
+                elif line.startswith("Real News Fact Check:"):
+                    prefix = "वस्तुस्थिती: " if base_code == "mr" else "सच्चाई: "
+                    clean_line = line[21:].strip()
+
+                query_enc = urllib.parse.urlencode({"q": clean_line[:400], "langpair": f"en|{base_code}"})
+                req_url = f"https://api.mymemory.translated.net/get?{query_enc}"
+                req = urllib.request.Request(req_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=3.5) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    text_out = data.get("responseData", {}).get("translatedText")
+                    if text_out and not text_out.startswith("MYMEMORY WARNING"):
+                        translated_lines.append(prefix + text_out.strip())
+                    else:
+                        translated_lines.append(line)
+
+            if translated_lines:
+                return "\n".join(translated_lines)
     except Exception as exc:
-        logger.warning("Explanation paragraph translation failed for '%s': %s", target_lang, exc)
+        logger.warning("Online gateway translation failed for '%s': %s", target_lang, exc)
 
     return text
 
@@ -192,7 +231,7 @@ def translate_explanation_paragraph(text: str, target_lang: str) -> str:
 def format_whatsapp_reply(response: CheckResponse) -> str:
     """
     Build a complete WhatsApp reply string from a CheckResponse.
-    Uses hardcoded labels from labels.yaml and provides honest translation fallback.
+    Uses hardcoded labels from labels.yaml and translates the complete explanation.
     """
     lang = (getattr(response, "language", "") or "en").split("-")[0].lower()
     divider = "─" * 25
@@ -222,24 +261,12 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
     if len(response.explanation) > 2000:
         explanation_raw += "…"
 
-    translation_unavailable_line: Optional[str] = None
-    if lang != "en":
-        if settings.gemini_api_key:
-            explanation_excerpt = translate_explanation_paragraph(explanation_raw, lang)
-        else:
-            explanation_excerpt = explanation_raw
-            translation_unavailable_line = get_ui_string("translation_unavailable", lang)
-    else:
-        explanation_excerpt = explanation_raw
-
     footer_parts = [
         divider,
         f"*Overall:* {overall_emoji} {overall_label}",
-        explanation_excerpt,
+        explanation_raw,
     ]
 
-    if translation_unavailable_line:
-        footer_parts.append(f"ℹ️ {translation_unavailable_line}")
 
     footer_parts.extend([
         divider,
@@ -287,37 +314,39 @@ def translate_reply_back(
     if not english_reply.strip():
         return english_reply
 
-    try:
-        # English → Indic translation uses Gemini only (M2M100 is Indic→English only)
-        from app.core.config import settings as cfg
+    # Map language codes to readable display names for the Gemini prompt
+    LANG_DISPLAY_NAMES = {
+        "hi": "Hindi (Devanagari script)",
+        "mr": "Marathi (Devanagari script)",
+        "hi-Latn": "Hindi written in Roman/Latin script (Hinglish, like WhatsApp messaging)",
+        "mr-Latn": "Marathi written in Roman/Latin script (the way Maharashtrians type on WhatsApp)",
+        "ta": "Tamil",
+        "te": "Telugu",
+        "bn": "Bengali",
+    }
+    lang_display = LANG_DISPLAY_NAMES.get(target_lang, f"language code '{target_lang}'")
 
-        if not cfg.gemini_api_key:
-            logger.info("No Gemini key — returning English reply.")
-            return english_reply
+    # 1. Try Google Gemini with retry+backoff
+    if settings.gemini_api_key:
+        try:
+            from app.core.redaction import redact_for_external
+            from app.core.gemini_client import call_gemini
 
-        from google import genai
-        from app.core.redaction import redact_for_external
-
-        redacted_reply = redact_for_external(english_reply)
-        client = genai.Client(api_key=cfg.gemini_api_key)
-        prompt = (
-            f"Translate the following WhatsApp fact-check reply into language code '{target_lang}'. "
-            "Preserve all *bold* markers, emojis, and URLs exactly as-is. "
-            "Output ONLY the translated text:\n\n"
-            f"{redacted_reply}"
-        )
-        response = client.models.generate_content(
-            model=cfg.gemini_model,
-            contents=prompt,
-        )
-        if response and response.text:
-            translated = response.text.strip()
-            # Respect WhatsApp hard cap after translation
-            if len(translated) > WHATSAPP_HARD_CAP:
-                translated = translated[:WHATSAPP_HARD_CAP - 3] + "…"
-            return translated
-
-    except Exception as exc:
-        logger.warning("Reply back-translation to '%s' failed: %s", target_lang, exc)
+            redacted_reply = redact_for_external(english_reply)
+            prompt = (
+                f"Translate the following WhatsApp fact-check reply into {lang_display}. "
+                "Preserve all *bold* markers, emojis, and URLs exactly as-is. "
+                "Output ONLY the translated text:\n\n"
+                f"{redacted_reply}"
+            )
+            result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+            if result:
+                if len(result) > WHATSAPP_HARD_CAP:
+                    result = result[:WHATSAPP_HARD_CAP - 3] + "…"
+                return result
+        except Exception as exc:
+            logger.warning("Gemini back-translation to '%s' failed: %s", target_lang, exc)
 
     return english_reply
+
+

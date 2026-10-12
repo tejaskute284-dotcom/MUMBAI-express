@@ -87,15 +87,12 @@ Output strictly valid JSON with NO markdown formatting:
   "reason": "GEMINI_FACT_CHECK"
 }}
 """
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
+        from app.core.gemini_client import call_gemini
+        raw_text = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
 
-        if not response or not response.text:
+        if not raw_text:
             return None
 
-        raw_text = response.text.strip()
         if raw_text.startswith("```json"):
             raw_text = raw_text[7:]
         elif raw_text.startswith("```"):
@@ -139,10 +136,9 @@ def _gemini_knowledge_verify(claim: str) -> Optional[Tuple[Verdict, float, str]]
 
     try:
         import json
-        from google import genai
         from app.core.redaction import redact_for_external
+        from app.core.gemini_client import call_gemini
 
-        client = genai.Client(api_key=settings.gemini_api_key)
         redacted = redact_for_external(claim)
 
         prompt = f"""You are a fact-checking system with expert knowledge of:
@@ -167,14 +163,11 @@ For common Indian hoaxes (UPI charges, WhatsApp shutdown, free government scheme
 Respond with valid JSON only:
 {{"verdict": "REFUTED", "confidence": 0.82, "reason": "GEMINI_KNOWLEDGE_BASE"}}"""
 
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
-        if not response or not response.text:
+        raw = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
+        if not raw:
             return None
 
-        raw = response.text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
         data = json.loads(raw)
         verdict_str = str(data.get("verdict", "")).upper().strip()
         conf = round(max(0.5, min(0.92, float(data.get("confidence", 0.75)))), 2)

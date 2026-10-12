@@ -255,11 +255,42 @@ window.addEventListener("click", () => {
   closeAllPopups();
 });
 
-// ── Voice Input (Web Speech API + MediaRecorder Fallback) ──
+// ── Voice Input (Dual-Mode: Speech Recognition + WebAudio PCM WAV) ──
 let speechRecognizer = null;
 let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
+let audioContext = null;
+let audioStream = null;
+let audioInputNode = null;
+let audioProcessorNode = null;
+let pcmBuffers = [];
+
+function encodeWAV(samples, sampleRate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+  }
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    let s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Blob([view], { type: 'audio/wav' });
+}
 
 async function toggleVoiceRecording() {
   const micBtn = document.getElementById("composerActionBtn");
@@ -269,12 +300,10 @@ async function toggleVoiceRecording() {
     if (speechRecognizer) {
       try { speechRecognizer.stop(); } catch (_) {}
     }
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      try { mediaRecorder.stop(); } catch (_) {}
-    }
+    stopAudioContextRecording();
     isRecording = false;
     if (micBtn) micBtn.classList.remove("recording");
-    showToast("Voice recording stopped");
+    showToast("Processing audio... 🎙️");
     return;
   }
 
@@ -285,7 +314,7 @@ async function toggleVoiceRecording() {
       speechRecognizer = new SpeechRecognition();
       speechRecognizer.continuous = false;
       speechRecognizer.interimResults = true;
-      speechRecognizer.lang = 'en-IN';
+      speechRecognizer.lang = 'hi-IN';
 
       speechRecognizer.onstart = () => {
         isRecording = true;
@@ -298,7 +327,7 @@ async function toggleVoiceRecording() {
         for (let i = e.resultIndex; i < e.results.length; ++i) {
           transcript += e.results[i][0].transcript;
         }
-        if (input) {
+        if (input && transcript) {
           input.value = transcript;
           const actionBtn = document.getElementById("composerActionBtn");
           if (actionBtn && transcript.trim()) actionBtn.classList.add("has-text");
@@ -309,11 +338,7 @@ async function toggleVoiceRecording() {
         console.warn("Speech recognition notice:", e.error);
         isRecording = false;
         if (micBtn) micBtn.classList.remove("recording");
-        if (e.error === 'network' || e.error === 'not-allowed') {
-          startMediaRecorderFallback();
-        } else {
-          showToast(`Microphone notice: ${e.error}`);
-        }
+        startAudioContextRecording();
       };
 
       speechRecognizer.onend = () => {
@@ -331,54 +356,72 @@ async function toggleVoiceRecording() {
     }
   }
 
-  startMediaRecorderFallback();
+  startAudioContextRecording();
 }
 
-async function startMediaRecorderFallback() {
+async function startAudioContextRecording() {
   const micBtn = document.getElementById("composerActionBtn");
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream);
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    audioInputNode = audioContext.createMediaStreamSource(audioStream);
 
-    mediaRecorder.onstart = () => {
-      isRecording = true;
-      if (micBtn) micBtn.classList.add("recording");
-      showToast("🎙️ Recording audio... Click mic again when done");
+    pcmBuffers = [];
+    audioProcessorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+    audioProcessorNode.onaudioprocess = (e) => {
+      if (!isRecording) return;
+      const channelData = e.inputBuffer.getChannelData(0);
+      pcmBuffers.push(new Float32Array(channelData));
     };
 
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunks.push(e.data);
-    };
+    audioInputNode.connect(audioProcessorNode);
+    audioProcessorNode.connect(audioContext.destination);
 
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(track => track.stop());
-      isRecording = false;
-      if (micBtn) micBtn.classList.remove("recording");
-
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      if (audioBlob.size < 100) return;
-
-      showToast("Transcribing voice note with backend... 🎙️");
-      try {
-        const data = await uploadVoiceAudio(audioBlob);
-        if (data && data.success && data.text) {
-          store.setActiveChat("bot");
-          sendMessage(`[Voice Note]: "${data.text}"`);
-          showToast("Voice claim verified! ✓");
-        } else {
-          showToast("Could not transcribe voice note.");
-        }
-      } catch (err) {
-        console.error("Audio error:", err);
-        showToast("Audio transcription failed.");
-      }
-    };
-
-    mediaRecorder.start();
+    isRecording = true;
+    if (micBtn) micBtn.classList.add("recording");
+    showToast("🎙️ Recording audio note... Click mic again when finished");
   } catch (err) {
-    console.error("Mic access error:", err);
-    showToast("Please allow microphone permissions.");
+    console.error("Audio recording error:", err);
+    showToast("Microphone permission required.");
+  }
+}
+
+async function stopAudioContextRecording() {
+  if (!audioContext || pcmBuffers.length === 0) return;
+  try {
+    if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+    if (audioProcessorNode) audioProcessorNode.disconnect();
+    if (audioInputNode) audioInputNode.disconnect();
+
+    let totalLength = pcmBuffers.reduce((acc, b) => acc + b.length, 0);
+    let mergedSamples = new Float32Array(totalLength);
+    let offset = 0;
+    for (let b of pcmBuffers) {
+      mergedSamples.set(b, offset);
+      offset += b.length;
+    }
+
+    const sampleRate = audioContext.sampleRate || 16000;
+    const wavBlob = encodeWAV(mergedSamples, sampleRate);
+    audioContext.close();
+    audioContext = null;
+    pcmBuffers = [];
+
+    if (wavBlob.size < 500) return;
+
+    showToast("Transcribing voice note with backend... 🎙️");
+    const data = await uploadVoiceAudio(wavBlob);
+    if (data && data.success && data.text) {
+      store.setActiveChat("bot");
+      sendMessage(data.text);
+      showToast("Voice claim verified! ✓");
+    } else {
+      showToast("Could not transcribe voice note.");
+    }
+  } catch (err) {
+    console.error("Audio error:", err);
+    showToast("Audio transcription failed.");
   }
 }
 

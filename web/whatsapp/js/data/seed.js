@@ -29,19 +29,19 @@ export const INITIAL_CHATS = {
   },
   sharma: {
     id: "sharma",
-    name: "Sharma Parivar 🏠",
-    sub: "Mummy, Papa, Dadi, Rohan, You",
-    avatar: "🏠",
+    name: "Tech & News Circle 💻",
+    sub: "Ananya, Rajesh, Priya, Rohan, You",
+    avatar: "💻",
     color: "#0f766e",
     isBot: false,
     pinned: false,
     unread: 2,
     time: "9:02 am",
-    lastMsg: "Papa: Haan beta, pehle verify kar lo.",
+    lastMsg: "Rajesh: Yes please, always verify before circulating.",
     messages: [
       {
         id: "m_sharma_1",
-        sender: "Mummy",
+        sender: "Ananya",
         isMe: false,
         forwarded: "many",
         text: "नींबू का रस और गर्म पानी पीने से 48 घंटे में कैंसर ठीक हो जाता है! सभी ग्रुप में शेयर करें 🙏",
@@ -53,18 +53,18 @@ export const INITIAL_CHATS = {
         sender: "You",
         isMe: true,
         quoted: {
-          author: "Mummy",
+          author: "Ananya",
           text: "नींबू का रस और गर्म पानी पीने से 48 घंटे में कैंसर ठीक हो जाता है..."
         },
-        text: "Mummy, aise unverified forwards pe vishwas mat karo. Main MUMBAI express se check karta hoon.",
+        text: "Ananya, let's not forward unverified medical claims. Let me check this with MUMBAI express.",
         time: "9:00 am",
         status: "✓✓"
       },
       {
         id: "m_sharma_3",
-        sender: "Papa",
+        sender: "Rajesh",
         isMe: false,
-        text: "Haan beta, pehle verify kar lo.",
+        text: "Yes please, always verify before circulating.",
         time: "9:02 am",
         status: ""
       }
@@ -72,19 +72,19 @@ export const INITIAL_CHATS = {
   },
   rishtedar: {
     id: "rishtedar",
-    name: "Rishtedar Mandali 👨‍👩‍👧‍👦",
-    sub: "Mausi, Mama ji, Chachu, Bua, You",
-    avatar: "👨‍👩‍👧‍👦",
+    name: "Community Hub 🌐",
+    sub: "Kiran, Manoj, Vikram, Neha, You",
+    avatar: "🌐",
     color: "#b45309",
     isBot: false,
     pinned: false,
     unread: 1,
     time: "Yesterday",
-    lastMsg: "Mama ji: Is this real? I transfer via UPI daily.",
+    lastMsg: "Manoj: Is this authentic? I use UPI daily for business.",
     messages: [
       {
         id: "m_rish_1",
-        sender: "Mausi",
+        sender: "Kiran",
         isMe: false,
         forwarded: "many",
         text: "NPCI has introduced 2 percent transaction fee on normal UPI payments starting this week. Forward to everyone before midnight!",
@@ -93,9 +93,9 @@ export const INITIAL_CHATS = {
       },
       {
         id: "m_rish_2",
-        sender: "Mama ji",
+        sender: "Manoj",
         isMe: false,
-        text: "Is this real? I transfer via UPI daily.",
+        text: "Is this authentic? I use UPI daily for business.",
         time: "Yesterday",
         status: ""
       }
@@ -103,21 +103,21 @@ export const INITIAL_CHATS = {
   },
   society: {
     id: "society",
-    name: "Shanti Nagar Society 🏢",
-    sub: "Secretary Uncle, Mrs. Iyer, Flat 304, You",
-    avatar: "🏢",
+    name: "City News & Alerts 📢",
+    sub: "Editorial Desk, Civic Admin, Community, You",
+    avatar: "📢",
     color: "#334155",
     isBot: false,
     pinned: false,
     unread: 0,
     time: "Yesterday",
-    lastMsg: "Secretary Uncle: Overhead water tank cleaning scheduled...",
+    lastMsg: "Civic Admin: Overhead water pipeline maintenance scheduled...",
     messages: [
       {
         id: "m_soc_1",
-        sender: "Secretary Uncle",
+        sender: "Civic Admin",
         isMe: false,
-        text: "Dear Residents, overhead water tank cleaning scheduled for Saturday 10:00 AM to 2:00 PM. Please store sufficient water.",
+        text: "Dear Residents, overhead water pipeline maintenance scheduled for Saturday 10:00 AM to 2:00 PM. Please plan accordingly.",
         time: "Yesterday",
         status: ""
       }
@@ -125,21 +125,21 @@ export const INITIAL_CHATS = {
   },
   friends: {
     id: "friends",
-    name: "Old School Gang 🎒",
+    name: "Project Team 🚀",
     sub: "Arjun, Kabir, Priya, You",
-    avatar: "🎒",
+    avatar: "🚀",
     color: "#701a75",
     isBot: false,
     pinned: false,
     unread: 0,
     time: "10:45 am",
-    lastMsg: "Kabir: Anyone up for weekend football match?",
+    lastMsg: "Kabir: Anyone up for weekend meetup?",
     messages: [
       {
         id: "m_fr_1",
         sender: "Kabir",
         isMe: false,
-        text: "Anyone up for weekend football match?",
+        text: "Anyone up for weekend meetup?",
         time: "10:45 am",
         status: ""
       }
@@ -147,21 +147,21 @@ export const INITIAL_CHATS = {
   },
   mummy: {
     id: "mummy",
-    name: "Mummy ❤️",
+    name: "Priya Sharma 👤",
     sub: "online",
-    avatar: "❤️",
+    avatar: "👤",
     color: "#be185d",
     isBot: false,
     pinned: false,
     unread: 0,
     time: "1:02 pm",
-    lastMsg: "Beta lunch kar liya?",
+    lastMsg: "Did you check the latest update?",
     messages: [
       {
         id: "m_mum_1",
-        sender: "Mummy",
+        sender: "Priya",
         isMe: false,
-        text: "Beta lunch kar liya?",
+        text: "Did you check the latest update?",
         time: "1:02 pm",
         status: ""
       }
@@ -169,9 +169,9 @@ export const INITIAL_CHATS = {
   },
   papa: {
     id: "papa",
-    name: "Papa 👔",
+    name: "Rajesh Verma 👤",
     sub: "last seen today at 11:15 am",
-    avatar: "👔",
+    avatar: "👤",
     color: "#1d4ed8",
     isBot: false,
     pinned: false,
@@ -181,7 +181,7 @@ export const INITIAL_CHATS = {
     messages: [
       {
         id: "m_pap_1",
-        sender: "Papa",
+        sender: "Rajesh",
         isMe: false,
         text: "Someone sent a forward claiming free railway travel for senior citizens. Check if it is official.",
         time: "11:15 am",

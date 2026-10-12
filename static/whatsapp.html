@@ -924,83 +924,83 @@
           </div>
         </div>
 
-        <!-- Sharma Parivar (Family Group) -->
+        <!-- Tech & Updates (Tech Group) -->
         <div class="contact-item active" id="item-sharma" onclick="selectChat('sharma')">
-          <div class="avatar" style="background:#0f766e;">🏠</div>
+          <div class="avatar" style="background:#0f766e;">💻</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Sharma Parivar 🏠</div>
+              <div class="contact-name">Tech & News Circle 💻</div>
               <div class="contact-time">12:12 pm</div>
             </div>
             <div class="contact-bottom">
-              <div class="contact-last-msg">Mummy: Forwarded message...</div>
+              <div class="contact-last-msg">Ananya: Forwarded message...</div>
               <span class="pinned-icon">📌</span>
             </div>
           </div>
         </div>
 
-        <!-- Rishtedar Mandali (Relatives Group) -->
+        <!-- Community Hub -->
         <div class="contact-item" id="item-rishtedar" onclick="selectChat('rishtedar')">
-          <div class="avatar" style="background:#b45309;">👨‍👩‍👧‍👦</div>
+          <div class="avatar" style="background:#b45309;">🌐</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Rishtedar Mandali 👨‍👩‍👧‍👦</div>
+              <div class="contact-name">Community Hub 🌐</div>
               <div class="contact-time">Yesterday</div>
             </div>
             <div class="contact-bottom">
-              <div class="contact-last-msg">Mausi: UPI 2 percent charges forward...</div>
+              <div class="contact-last-msg">Kiran: UPI 2 percent charges forward...</div>
             </div>
           </div>
         </div>
 
-        <!-- Shanti Nagar Society (Housing Society) -->
+        <!-- City News & Alerts -->
         <div class="contact-item" id="item-society" onclick="selectChat('society')">
-          <div class="avatar" style="background:#334155;">🏢</div>
+          <div class="avatar" style="background:#334155;">📢</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Shanti Nagar Society 🏢</div>
+              <div class="contact-name">City News & Alerts 📢</div>
               <div class="contact-time">Yesterday</div>
             </div>
             <div class="contact-bottom">
-              <div class="contact-last-msg">Secretary: Water tank cleaning scheduled...</div>
+              <div class="contact-last-msg">Editorial: Overhead water tank cleaning scheduled...</div>
             </div>
           </div>
         </div>
 
-        <!-- Old School Gang (Friends Group) -->
+        <!-- Project Group -->
         <div class="contact-item" id="item-friends" onclick="selectChat('friends')">
-          <div class="avatar" style="background:#701a75;">🎒</div>
+          <div class="avatar" style="background:#701a75;">🚀</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Old School Gang 🎒</div>
+              <div class="contact-name">Project Team 🚀</div>
               <div class="contact-time">10:45 am</div>
             </div>
             <div class="contact-bottom">
-              <div class="contact-last-msg">Kabir: Anyone up for weekend match?</div>
+              <div class="contact-last-msg">Kabir: Anyone up for weekend meetup?</div>
             </div>
           </div>
         </div>
 
-        <!-- Mummy (1:1) -->
+        <!-- Priya Sharma (1:1) -->
         <div class="contact-item" id="item-mummy" onclick="selectChat('mummy')">
-          <div class="avatar" style="background:#be185d;">❤️</div>
+          <div class="avatar" style="background:#be185d;">👤</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Mummy ❤️</div>
+              <div class="contact-name">Priya Sharma 👤</div>
               <div class="contact-time">1:02 pm</div>
             </div>
             <div class="contact-bottom">
-              <div class="contact-last-msg">Beta lunch kar liya?</div>
+              <div class="contact-last-msg">Did you check the latest update?</div>
             </div>
           </div>
         </div>
 
-        <!-- Papa (1:1) -->
+        <!-- Dr. Rajesh Verma (1:1) -->
         <div class="contact-item" id="item-papa" onclick="selectChat('papa')">
-          <div class="avatar" style="background:#1d4ed8;">👔</div>
+          <div class="avatar" style="background:#1d4ed8;">👤</div>
           <div class="contact-info">
             <div class="contact-top">
-              <div class="contact-name">Papa 👔</div>
+              <div class="contact-name">Rajesh Verma 👤</div>
               <div class="contact-time">11:15 am</div>
             </div>
             <div class="contact-bottom">
@@ -1016,10 +1016,10 @@
       <!-- Active Chat Header -->
       <div class="chat-header">
         <div class="chat-header-left">
-          <div class="avatar" id="headerAvatar" style="background:#0f766e;">🏠</div>
+          <div class="avatar" id="headerAvatar" style="background:#0f766e;">💻</div>
           <div>
-            <div class="chat-header-title" id="headerTitle">Sharma Parivar 🏠</div>
-            <div class="chat-header-sub" id="headerSub">Mummy, Papa, Dadi, Rohan, You</div>
+            <div class="chat-header-title" id="headerTitle">Tech & News Circle 💻</div>
+            <div class="chat-header-sub" id="headerSub">Ananya, Rajesh, Priya, Rohan, You</div>
           </div>
         </div>
         <div class="chat-header-right">
@@ -1208,25 +1208,27 @@
     safe = safe.replace(/```([^`]+)```/g, "<code>$1</code>");
     safe = safe.replace(/(https?:\/\/[^\s<]+)/g, function(url) {
       if (isSafeUrl(url)) {
-        return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#53bdeb;text-decoration:underline;">' + url + '</a>';
+        return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#53bdeb;text-decoration:underline;word-break:break-all;">' + url + '</a>';
       }
       return url;
     });
+    // Render dividers cleanly
+    safe = safe.replace(/(?:─|—|-){15,}/g, '<div style="height:1px;background:rgba(134,150,160,0.25);margin:7px 0;"></div>');
     safe = safe.replace(/\n/g, "<br>");
     return safe;
   }
 
-  // ── Fictional Seed Chats (F7, Section 6.2) ──
+  // ── Professional Seed Chats (F7, Section 6.2) ──
   const CHATS = {
     sharma: {
-      name: "Sharma Parivar 🏠",
-      sub: "Mummy, Papa, Dadi, Rohan, You",
-      avatar: "🏠",
+      name: "Tech & News Circle 💻",
+      sub: "Ananya, Rajesh, Priya, Rohan, You",
+      avatar: "💻",
       color: "#0f766e",
       messages: [
         {
           id: "m_sharma_1",
-          sender: "Mummy",
+          sender: "Ananya",
           isMe: false,
           forwarded: "many",
           text: "नींबू का रस और गर्म पानी पीने से 48 घंटे में कैंसर ठीक हो जाता है! सभी ग्रुप में शेयर करें 🙏",
@@ -1238,105 +1240,105 @@
           sender: "You",
           isMe: true,
           quoted: {
-            author: "Mummy",
+            author: "Ananya",
             text: "नींबू का रस और गर्म पानी पीने से 48 घंटे में कैंसर ठीक हो जाता है..."
           },
-          text: "Mummy, aise unverified forwards pe vishwas mat karo. Main MUMBAI express se check karta hoon.",
+          text: "Ananya, let's not forward unverified medical claims. Let me check this with MUMBAI express.",
           time: "9:00 am",
           status: "✓✓"
         },
         {
           id: "m_sharma_3",
-          sender: "Papa",
+          sender: "Rajesh",
           isMe: false,
-          text: "Haan beta, pehle verify kar lo.",
+          text: "Yes please, always verify before circulating.",
           time: "9:02 am",
           status: ""
         }
       ]
     },
     rishtedar: {
-      name: "Rishtedar Mandali 👨‍👩‍👧‍👦",
-      sub: "Mausi, Mama ji, Chachu, Bua, You",
-      avatar: "👨‍👩‍👧‍👦",
+      name: "Community Hub 🌐",
+      sub: "Kiran, Manoj, Vikram, Neha, You",
+      avatar: "🌐",
       color: "#b45309",
       messages: [
         {
           id: "m_rish_1",
-          sender: "Mausi",
-          isMe: false,
+          sender: "Kiran",
           forwarded: "many",
+          isMe: false,
           text: "NPCI has introduced 2 percent transaction fee on normal UPI payments starting this week. Forward to everyone before midnight!",
           time: "Yesterday",
           status: ""
         },
         {
           id: "m_rish_2",
-          sender: "Mama ji",
+          sender: "Manoj",
           isMe: false,
-          text: "Is this real? I transfer via UPI daily.",
+          text: "Is this authentic? I use UPI daily for business.",
           time: "Yesterday",
           status: ""
         }
       ]
     },
     society: {
-      name: "Shanti Nagar Society 🏢",
-      sub: "Secretary Uncle, Mrs. Iyer, Flat 304, You",
-      avatar: "🏢",
+      name: "City News & Alerts 📢",
+      sub: "Editorial Desk, Civic Admin, Community, You",
+      avatar: "📢",
       color: "#334155",
       messages: [
         {
           id: "m_soc_1",
-          sender: "Secretary Uncle",
+          sender: "Civic Admin",
           isMe: false,
-          text: "Dear Residents, overhead water tank cleaning scheduled for Saturday 10:00 AM to 2:00 PM. Please store sufficient water.",
+          text: "Dear Residents, overhead water pipeline maintenance scheduled for Saturday 10:00 AM to 2:00 PM. Please plan accordingly.",
           time: "Yesterday",
           status: ""
         }
       ]
     },
     friends: {
-      name: "Old School Gang 🎒",
+      name: "Project Team 🚀",
       sub: "Arjun, Kabir, Priya, You",
-      avatar: "🎒",
+      avatar: "🚀",
       color: "#701a75",
       messages: [
         {
           id: "m_fr_1",
           sender: "Kabir",
           isMe: false,
-          text: "Anyone up for weekend football match?",
+          text: "Anyone up for weekend meetup?",
           time: "10:45 am",
           status: ""
         }
       ]
     },
     mummy: {
-      name: "Mummy ❤️",
+      name: "Priya Sharma 👤",
       sub: "online",
-      avatar: "❤️",
+      avatar: "👤",
       color: "#be185d",
       messages: [
         {
           id: "m_mum_1",
-          sender: "Mummy",
+          sender: "Priya",
           isMe: false,
-          text: "Beta lunch kar liya?",
+          text: "Did you check the latest update?",
           time: "1:02 pm",
           status: ""
         }
       ]
     },
     papa: {
-      name: "Papa 👔",
+      name: "Rajesh Verma 👤",
       sub: "last seen today at 11:15 am",
-      avatar: "👔",
+      avatar: "👤",
       color: "#1d4ed8",
       messages: [
         {
           id: "m_pap_1",
-          sender: "Papa",
+          sender: "Rajesh",
           isMe: false,
           text: "Someone sent a forward claiming free railway travel for senior citizens. Check if it is official.",
           time: "11:15 am",
@@ -1767,8 +1769,46 @@
   // ── High-Reliability Dual-Mode Microphone Voice Input ──
   let speechRecognizer = null;
   let isRecordingVoice = false;
-  let mediaRecorder = null;
-  let audioChunks = [];
+  let audioContext = null;
+  let audioStream = null;
+  let audioInputNode = null;
+  let audioProcessorNode = null;
+  let pcmBuffers = [];
+
+  function encodeWAV(samples, sampleRate) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    // RIFF chunk descriptor
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    // fmt sub-chunk
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // Linear PCM
+    view.setUint16(22, 1, true); // Mono channel
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true); // Byte rate
+    view.setUint16(32, 2, true); // Block align
+    view.setUint16(34, 16, true); // Bits per sample
+    // data sub-chunk
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    // Write samples (float32 -> int16)
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Blob([view], { type: 'audio/wav' });
+  }
+
+  function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  }
 
   async function toggleVoiceRecording() {
     const micBtn = document.getElementById("micBtn");
@@ -1779,131 +1819,97 @@
       if (speechRecognizer) {
         try { speechRecognizer.stop(); } catch(e){}
       }
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        try { mediaRecorder.stop(); } catch(e){}
-      }
+      stopAudioContextRecording();
       isRecordingVoice = false;
       micBtn.style.color = "var(--wa-text-secondary)";
       micBtn.style.background = "transparent";
       micBtn.style.boxShadow = "none";
-      showToast("Voice recording stopped");
+      showToast("Processing audio... 🎙️");
       return;
     }
 
-    // Try Mode 1: Web Speech Recognition API
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (SpeechRecognition) {
-      try {
-        speechRecognizer = new SpeechRecognition();
-        speechRecognizer.continuous = false;
-        speechRecognizer.interimResults = true;
-        speechRecognizer.lang = 'en-IN';
-
-        speechRecognizer.onstart = () => {
-          isRecordingVoice = true;
-          micBtn.style.color = "#ef4444";
-          micBtn.style.background = "rgba(239, 68, 68, 0.25)";
-          micBtn.style.boxShadow = "0 0 12px rgba(239, 68, 68, 0.6)";
-          showToast("🎙️ Listening... Speak your claim now");
-        };
-
-        speechRecognizer.onresult = (event) => {
-          let transcript = "";
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcript += event.results[i][0].transcript;
-          }
-          input.value = transcript;
-        };
-
-        speechRecognizer.onerror = (event) => {
-          console.warn("Speech recognition error:", event.error);
-          isRecordingVoice = false;
-          micBtn.style.color = "var(--wa-text-secondary)";
-          micBtn.style.background = "transparent";
-          micBtn.style.boxShadow = "none";
-          // Fallback to MediaRecorder audio recording if permission or network issue
-          if (event.error === 'network' || event.error === 'not-allowed') {
-            startMediaRecorderFallback();
-          } else {
-            showToast("Microphone notice: " + event.error);
-          }
-        };
-
-        speechRecognizer.onend = () => {
-          isRecordingVoice = false;
-          micBtn.style.color = "var(--wa-text-secondary)";
-          micBtn.style.background = "transparent";
-          micBtn.style.boxShadow = "none";
-          if (input.value.trim()) {
-            showToast("Voice captured! Click send or press Enter to verify.");
-          }
-        };
-
-        speechRecognizer.start();
-        return;
-      } catch (err) {
-        console.warn("SpeechRecognition fallback triggered:", err);
-      }
-    }
-
-    // Mode 2: MediaRecorder fallback
-    startMediaRecorderFallback();
+    // Directly use reliable local WebAudio recording with Whisper transcription
+    startAudioContextRecording();
   }
 
-  // MediaRecorder Fallback that records audio and sends to /api/voice
-  async function startMediaRecorderFallback() {
+  // Web Audio API recorder that creates pure 16,000Hz 16-bit PCM WAV in memory
+  async function startAudioContextRecording() {
     const micBtn = document.getElementById("micBtn");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
+      audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      audioInputNode = audioContext.createMediaStreamSource(audioStream);
+      
+      pcmBuffers = [];
+      audioProcessorNode = audioContext.createScriptProcessor(4096, 1, 1);
 
-      mediaRecorder.onstart = () => {
-        isRecordingVoice = true;
-        micBtn.style.color = "#ef4444";
-        micBtn.style.background = "rgba(239, 68, 68, 0.25)";
-        micBtn.style.boxShadow = "0 0 12px rgba(239, 68, 68, 0.6)";
-        showToast("🎙️ Recording audio... Click mic again when done");
+      audioProcessorNode.onaudioprocess = (e) => {
+        if (!isRecordingVoice) return;
+        const channelData = e.inputBuffer.getChannelData(0);
+        pcmBuffers.push(new Float32Array(channelData));
       };
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunks.push(e.data);
-      };
+      audioInputNode.connect(audioProcessorNode);
+      audioProcessorNode.connect(audioContext.destination);
 
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
-        micBtn.style.color = "var(--wa-text-secondary)";
-        micBtn.style.background = "transparent";
-        micBtn.style.boxShadow = "none";
-        isRecordingVoice = false;
-
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        if (audioBlob.size < 100) return;
-
-        showToast("Transcribing recorded voice note... 🎙️");
-        const formData = new FormData();
-        formData.append("file", audioBlob, "voice_note.wav");
-
-        try {
-          const res = await fetch("/api/voice", { method: "POST", body: formData });
-          const data = await res.json();
-          if (data.success && data.text) {
-            sendMessage(`[Voice Note]: "${data.text}"`);
-            showToast("Voice claim verified! ✓");
-          } else {
-            sendMessage("[Voice Note Forward] - Voice claim submitted for verification");
-          }
-        } catch (err) {
-          console.error("Voice note submission error:", err);
-          sendMessage("[Voice Note Forward] - Voice claim submitted for verification");
-        }
-      };
-
-      mediaRecorder.start();
+      isRecordingVoice = true;
+      micBtn.style.color = "#ef4444";
+      micBtn.style.background = "rgba(239, 68, 68, 0.25)";
+      micBtn.style.boxShadow = "0 0 12px rgba(239, 68, 68, 0.6)";
+      showToast("🎙️ Recording audio note... Click mic again when finished");
     } catch (err) {
       console.error("Audio recording error:", err);
-      showToast("Please allow microphone permissions in your browser.");
+      showToast("Microphone permission required. Please allow access in browser settings.");
+    }
+  }
+
+  async function stopAudioContextRecording() {
+    if (!audioContext || pcmBuffers.length === 0) return;
+
+    try {
+      if (audioStream) {
+        audioStream.getTracks().forEach(t => t.stop());
+      }
+      if (audioProcessorNode) {
+        audioProcessorNode.disconnect();
+      }
+      if (audioInputNode) {
+        audioInputNode.disconnect();
+      }
+
+      // Flatten buffers
+      let totalLength = pcmBuffers.reduce((acc, b) => acc + b.length, 0);
+      let mergedSamples = new Float32Array(totalLength);
+      let offset = 0;
+      for (let b of pcmBuffers) {
+        mergedSamples.set(b, offset);
+        offset += b.length;
+      }
+
+      const sampleRate = audioContext.sampleRate || 16000;
+      const wavBlob = encodeWAV(mergedSamples, sampleRate);
+      audioContext.close();
+      audioContext = null;
+      pcmBuffers = [];
+
+      if (wavBlob.size < 500) return;
+
+      showToast("Transcribing voice note with Whisper... 🎙️");
+      const formData = new FormData();
+      formData.append("file", wavBlob, "voice_record.wav");
+
+      const res = await fetch("/api/voice", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.success && data.text && data.text.trim()) {
+        selectChat("bot");
+        showToast("Voice captured! Verifying claim... ✓");
+        sendMessage(data.text.trim());
+      } else {
+        showToast("No speech detected. Please speak closer to the mic.");
+      }
+    } catch (err) {
+      console.error("Audio processing error:", err);
+      showToast("Voice transcription error. Please try again.");
     }
   }
 
@@ -2038,43 +2044,51 @@
         <span style="background:#00a884;color:#111b21;padding:4px 10px;border-radius:12px;font-size:11.5px;font-weight:700;">Forward</span>
       </div>
 
-      <!-- Fictional Chats -->
+      <!-- Contact Targets -->
       <div onclick="forwardToTarget('sharma')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#0f766e;display:flex;align-items:center;justify-content:center;">🏠</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#0f766e;display:flex;align-items:center;justify-content:center;">💻</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:#e9edef;">Sharma Parivar 🏠</div>
-          <div style="font-size:12px;color:#8696a0;">Family Group</div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">Tech & News Circle 💻</div>
+          <div style="font-size:12px;color:#8696a0;">Tech Discussion Group</div>
         </div>
       </div>
 
       <div onclick="forwardToTarget('rishtedar')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#b45309;display:flex;align-items:center;justify-content:center;">👨‍👩‍👧‍👦</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#b45309;display:flex;align-items:center;justify-content:center;">🌐</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:#e9edef;">Rishtedar Mandali 👨‍👩‍👧‍👦</div>
-          <div style="font-size:12px;color:#8696a0;">Relatives Group</div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">Community Hub 🌐</div>
+          <div style="font-size:12px;color:#8696a0;">Community Channel</div>
         </div>
       </div>
 
       <div onclick="forwardToTarget('society')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;">🏢</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;">📢</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:#e9edef;">Shanti Nagar Society 🏢</div>
-          <div style="font-size:12px;color:#8696a0;">Housing Society</div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">City News & Alerts 📢</div>
+          <div style="font-size:12px;color:#8696a0;">Public Notices</div>
+        </div>
+      </div>
+
+      <div onclick="forwardToTarget('friends')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#701a75;display:flex;align-items:center;justify-content:center;">🚀</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">Project Team 🚀</div>
+          <div style="font-size:12px;color:#8696a0;">Work Team</div>
         </div>
       </div>
 
       <div onclick="forwardToTarget('mummy')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#be185d;display:flex;align-items:center;justify-content:center;">❤️</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#be185d;display:flex;align-items:center;justify-content:center;">👤</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:#e9edef;">Mummy ❤️</div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">Priya Sharma 👤</div>
           <div style="font-size:12px;color:#8696a0;">Contact</div>
         </div>
       </div>
 
       <div onclick="forwardToTarget('papa')" style="display:flex;align-items:center;gap:14px;padding:10px 20px;cursor:pointer;transition:background 0.15s;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;">👔</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;">👤</div>
         <div>
-          <div style="font-size:14px;font-weight:600;color:#e9edef;">Papa 👔</div>
+          <div style="font-size:14px;font-weight:600;color:#e9edef;">Rajesh Verma 👤</div>
           <div style="font-size:12px;color:#8696a0;">Contact</div>
         </div>
       </div>

@@ -131,14 +131,15 @@ def run_pipeline(message: IngestedMessage) -> CheckResponse:
 
     # If the message is a greeting, opinion, pure question, or has no verifiable claims
     if not claims or is_non_claim(english_text):
-        logger.info("Non-claim detected — returning standard prompt reply.")
+        logger.info("Non-claim detected — returning standard prompt reply in %s.", lang_code)
         timings["total_ms"] = round((time.monotonic() - t_start) * 1000, 1)
-        reply = "Only factual claims can be verified. Please share a forwarded message to check."
+        base_reply = "Only factual claims can be verified. Please share a forwarded message to check."
+        localized_reply = translate_reply_back(base_reply, lang_code)
         return CheckResponse(
             claim_results=[],
             overall_verdict=Verdict.UNVERIFIABLE,
-            explanation=reply,
-            formatted_reply=reply,
+            explanation=localized_reply,
+            formatted_reply=localized_reply,
             language=lang_code,
             timings_ms=timings,
             cached=False,

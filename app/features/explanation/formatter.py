@@ -261,10 +261,17 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
     if len(response.explanation) > 2000:
         explanation_raw += "…"
 
+    # If user language is non-English and translation is unavailable, include fallback notice (AT28)
+    explanation_block = [explanation_raw]
+    if lang and not lang.startswith("en") and not settings.gemini_api_key:
+        fallback_notice = get_ui_string("translation_unavailable", lang)
+        if fallback_notice:
+            explanation_block.insert(0, f"_{fallback_notice}_")
+
     footer_parts = [
         divider,
         f"*Overall:* {overall_emoji} {overall_label}",
-        explanation_raw,
+        "\n\n".join(explanation_block),
     ]
 
 

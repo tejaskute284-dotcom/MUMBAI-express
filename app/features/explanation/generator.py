@@ -75,45 +75,32 @@ def _template_explanation(result: ClaimResult) -> str:
     strength_label, strength_detail = compute_evidence_strength(result.evidence)
     ev_text = _top_evidence_text(result)
 
-    # If we have an exact gold match from the pre-verified claim bank or authoritative debunking
-    if result.reason_code == "CLAIM_BANK_MATCH" and result.evidence:
-        real_fact = result.evidence[0].snippet.strip()
-        lines = [
-            f"Verdict: {emoji} {label}",
-            f"Real News Fact Check: {real_fact}",
-            f"Evidence strength: {strength_label} · {strength_detail}",
-            f'Claim: "{result.claim[:200]}"',
-            "",
-            "Evidence summary:",
-            ev_text,
-        ]
-        return "\n".join(lines)
-
     lines = [
         f"Verdict: {emoji} {label}",
         f"Evidence strength: {strength_label} · {strength_detail}",
         f'Claim: "{result.claim[:200]}"',
-        "",
-        "Evidence summary:",
-        ev_text,
     ]
 
-    if result.reason_code == "AUTHORITATIVE_FACT_CHECK":
-        lines.append("")
+    if result.reason_code == "CLAIM_BANK_MATCH" and result.evidence:
+        real_fact = result.evidence[0].snippet.strip()
+        lines.append(f"Real News Fact Check: {real_fact}")
+    elif result.reason_code == "AUTHORITATIVE_FACT_CHECK":
         lines.append("This verdict is based on an authoritative fact-checking source.")
     elif result.reason_code == "NO_EVIDENCE":
-        lines.append("")
         lines.append("No relevant evidence was found for this claim. Please verify manually.")
     elif result.reason_code in ("LOW_EVIDENCE_SIGNAL", "INCONCLUSIVE"):
-        lines.append("")
         lines.append("Evidence was inconclusive. Treat this claim with caution.")
 
     claim_lower = result.claim.lower()
     if result.verdict == Verdict.UNVERIFIABLE and any(kw in claim_lower for kw in HEALTH_KEYWORDS):
-        lines.append("")
         lines.append(
             "Health advisory: No scientific or medical evidence supports claims that any household chemical, gas, or unverified substance cures disease. Please consult a certified doctor or check WHO.int and ICMR.gov.in for accurate health information."
         )
+
+    if result.evidence:
+        lines.append("")
+        lines.append("Evidence summary:")
+        lines.append(ev_text)
 
     return "\n".join(lines)
 

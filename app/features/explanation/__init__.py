@@ -7,7 +7,7 @@ Generates human-readable WhatsApp replies from structured ClaimResult objects:
   and language-specific formatting to produce the final user-facing message.
 """
 
-from app.features.explanation.generator import generate_explanation
 from app.features.explanation.formatter import format_whatsapp_reply
+from app.features.explanation.generator import generate_explanation
 
 __all__ = ["generate_explanation", "format_whatsapp_reply"]

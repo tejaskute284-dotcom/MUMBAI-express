@@ -1,4 +1,4 @@
-﻿"""
+"""
 Article URL text extraction using newspaper3k with Open Graph meta fallback.
 
 Guarantees:
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 try:
     from newspaper import Article
@@ -92,7 +92,10 @@ def extract_text_from_url(url: str) -> URLResult:
             body = (article.text or "").strip()
 
             if body:
-                logger.info("Successfully extracted article via newspaper3k (%d chars)", len(body))
+                logger.info(
+                    "Successfully extracted article via newspaper3k (%d chars)",
+                    len(body),
+                )
                 return URLResult(
                     text=body[:MAX_TEXT_CHARS],
                     title=title,
@@ -100,7 +103,9 @@ def extract_text_from_url(url: str) -> URLResult:
                     extraction_method="newspaper",
                 )
         except Exception as exc:
-            logger.warning("newspaper3k failed for %s: %s. Trying OG fallback...", url, exc)
+            logger.warning(
+                "newspaper3k failed for %s: %s. Trying OG fallback...", url, exc
+            )
 
     # Fallback to Open Graph description
     og_text = fetch_og_description(url)

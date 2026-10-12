@@ -3,6 +3,7 @@ app/core/gemini_client.py
 Centralized Gemini API wrapper with automatic retry + exponential backoff.
 Free-tier quota: 5 requests/min. Handles 429 RESOURCE_EXHAUSTED gracefully.
 """
+
 from __future__ import annotations
 
 import logging
@@ -57,8 +58,13 @@ def call_gemini(
                     time.sleep(wait_time)
                     continue
                 else:
-                    logger.warning("Gemini 429: all %d retries exhausted. Fast-failing to deterministic fallback.", max_retries)
+                    logger.warning(
+                        "Gemini 429: all %d retries exhausted. Fast-failing to deterministic fallback.",
+                        max_retries,
+                    )
                     return None
-            logger.warning("Gemini call failed (attempt %d/%d): %s", attempt, max_retries, exc)
+            logger.warning(
+                "Gemini call failed (attempt %d/%d): %s", attempt, max_retries, exc
+            )
             return None
     return None

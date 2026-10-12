@@ -1,9 +1,10 @@
-﻿"""
+"""
 Pydantic v2 data contracts for MUMBAI express pipeline stages.
 Guarantees clean schema validation and type safety across all layer boundaries.
 """
 
 from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.constants import InputType, Rating, Tier, Verdict
@@ -17,11 +18,14 @@ class IngestedMessage(BaseModel):
     - Sanitized input: raw_text contains unicode-normalized, zero-width-stripped content.
     - Polymorphic input_type (TEXT, IMAGE, AUDIO, PDF, URL) with dedicated extraction metrics.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     raw_text: str
     input_type: InputType
-    from_number: str = Field(description="SHA-256 hashed sender identity, never raw phone number")
+    from_number: str = Field(
+        description="SHA-256 hashed sender identity, never raw phone number"
+    )
     original_body: str = ""
     ocr_confidence: Optional[float] = None
     audio_duration_sec: Optional[float] = None
@@ -33,6 +37,7 @@ class NLPResult(BaseModel):
     """
     Structured analysis produced by the NLP layer.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     detected_language: str
@@ -48,6 +53,7 @@ class EvidenceItem(BaseModel):
     """
     A single piece of retrieved fact-check or web evidence.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     url: str
@@ -70,6 +76,7 @@ class ClaimResult(BaseModel):
     """
     Verification outcome for a single claim.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     claim: str
@@ -87,6 +94,7 @@ class CheckResponse(BaseModel):
     """
     Complete end-to-end response returned to the caller or API client.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     claim_results: list[ClaimResult] = Field(default_factory=list)
@@ -103,6 +111,7 @@ class WebhookPayload(BaseModel):
     """
     Payload received from Twilio WhatsApp webhook.
     """
+
     model_config = ConfigDict(extra="ignore")
 
     From: str = ""

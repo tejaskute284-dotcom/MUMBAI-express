@@ -1,4 +1,4 @@
-﻿"""
+"""
 Logging setup and redaction filter for MUMBAI express.
 Ensures request ids are tracked and PII is scrubbed before writing to streams.
 """
@@ -6,12 +6,13 @@ Ensures request ids are tracked and PII is scrubbed before writing to streams.
 import contextvars
 import logging
 import sys
-from typing import Any
 
 from app.core.redaction import redact
 
 # Context variable for tracking request ID across async tasks
-request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="")
+request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "request_id", default=""
+)
 
 
 class RedactionFilter(logging.Filter):
@@ -42,8 +43,7 @@ class RedactionFilter(logging.Filter):
                 }
             elif isinstance(record.args, tuple):
                 record.args = tuple(
-                    redact(arg) if isinstance(arg, str) else arg
-                    for arg in record.args
+                    redact(arg) if isinstance(arg, str) else arg for arg in record.args
                 )
 
         return True

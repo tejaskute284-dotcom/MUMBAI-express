@@ -42,7 +42,6 @@ pathological values from dominating the upstream ranking stage.
 from __future__ import annotations
 
 import logging
-from typing import List
 from urllib.parse import urlparse
 
 import requests
@@ -60,7 +59,7 @@ BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 
 
-def _search_brave(query: str, api_key: str) -> List[EvidenceItem]:
+def _search_brave(query: str, api_key: str) -> list[EvidenceItem]:
     """
     Execute search using Brave Search API.
 
@@ -81,7 +80,7 @@ def _search_brave(query: str, api_key: str) -> List[EvidenceItem]:
 
     data = resp.json()
     web_results = data.get("web", {}).get("results", [])
-    items: List[EvidenceItem] = []
+    items: list[EvidenceItem] = []
 
     for r in web_results:
         url = r.get("url", "")
@@ -111,7 +110,7 @@ def _search_brave(query: str, api_key: str) -> List[EvidenceItem]:
     return items
 
 
-def _search_tavily(query: str, api_key: str) -> List[EvidenceItem]:
+def _search_tavily(query: str, api_key: str) -> list[EvidenceItem]:
     """
     Execute search using Tavily Search API with fact-checking query optimization.
 
@@ -122,7 +121,10 @@ def _search_tavily(query: str, api_key: str) -> List[EvidenceItem]:
     # Bias query toward fact checking if not already present.
     lower_q = query.lower()
     search_q = query
-    if not any(k in lower_q for k in ["fact check", "debunk", "myth", "true or false", "hoax", "rumor"]):
+    if not any(
+        k in lower_q
+        for k in ["fact check", "debunk", "myth", "true or false", "hoax", "rumor"]
+    ):
         search_q = f"fact check: {query}"
 
     payload = {
@@ -146,7 +148,7 @@ def _search_tavily(query: str, api_key: str) -> List[EvidenceItem]:
         data = resp.json()
 
     results = data.get("results", [])
-    items: List[EvidenceItem] = []
+    items: list[EvidenceItem] = []
 
     for r in results:
         url = r.get("url", "")
@@ -185,7 +187,7 @@ def _search_tavily(query: str, api_key: str) -> List[EvidenceItem]:
     return items
 
 
-def _search_google_news_rss(query: str) -> List[EvidenceItem]:
+def _search_google_news_rss(query: str) -> list[EvidenceItem]:
     """
     Fetch live news items from Google News RSS feed for real-time fact checks and reporting.
     Runs as a zero-credential live search provider when third-party search keys are not set.
@@ -195,9 +197,11 @@ def _search_google_news_rss(query: str) -> List[EvidenceItem]:
 
     search_query = query if "fact check" in query.lower() else f"fact check {query}"
     encoded = urllib.parse.quote(search_query)
-    rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=en-IN&gl=IN&ceid=IN:en"
+    rss_url = (
+        f"https://news.google.com/rss/search?q={encoded}&hl=en-IN&gl=IN&ceid=IN:en"
+    )
 
-    items: List[EvidenceItem] = []
+    items: list[EvidenceItem] = []
     try:
         resp = requests.get(rss_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=6.0)
         if resp.status_code != 200:
@@ -211,7 +215,9 @@ def _search_google_news_rss(query: str) -> List[EvidenceItem]:
             link_elem = r.find("link")
             date_elem = r.find("pubDate")
 
-            title = title_elem.text if title_elem is not None and title_elem.text else ""
+            title = (
+                title_elem.text if title_elem is not None and title_elem.text else ""
+            )
             url = link_elem.text if link_elem is not None and link_elem.text else ""
             pub_date = date_elem.text if date_elem is not None else None
 
@@ -221,7 +227,9 @@ def _search_google_news_rss(query: str) -> List[EvidenceItem]:
             # Detect source domain from title suffix (e.g., 'Headline - BOOM Live')
             source_domain = ""
             if " - " in title:
-                source_domain = title.rsplit(" - ", 1)[-1].strip().lower().replace(" ", "") + ".com"
+                source_domain = (
+                    title.rsplit(" - ", 1)[-1].strip().lower().replace(" ", "") + ".com"
+                )
 
             tier = classify_domain(source_domain or url)
 
@@ -243,7 +251,7 @@ def _search_google_news_rss(query: str) -> List[EvidenceItem]:
     return items
 
 
-def search_web(query: str) -> List[EvidenceItem]:
+def search_web(query: str) -> list[EvidenceItem]:
     """
     Search the web for claims or evidence using the configured provider (Brave, Tavily, or Live Google News RSS).
     Returns a list of structured EvidenceItem objects. Never raises exceptions.
@@ -253,6 +261,7 @@ def search_web(query: str) -> List[EvidenceItem]:
 
     # Redact PII from query before sending to external search provider.
     from app.core.redaction import redact_for_external
+
     cleaned_query = redact_for_external(query.strip())
 
     if not settings.search_api_key:
@@ -269,4 +278,3 @@ def search_web(query: str) -> List[EvidenceItem]:
     except Exception as exc:
         logger.warning("Web search failed for query '%s': %s", query, exc)
         return _search_google_news_rss(cleaned_query)
-

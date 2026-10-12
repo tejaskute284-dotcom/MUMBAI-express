@@ -6,7 +6,7 @@ and safe outbound HTTP communications.
 import ipaddress
 import logging
 import socket
-from typing import Optional, Tuple
+from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -90,7 +90,9 @@ def is_public_http_url(url: str) -> bool:
                 sockaddr = entry[4]
                 ip_str = sockaddr[0]
                 if is_ip_private_or_reserved(ip_str):
-                    logger.warning("SSRF blocked: %s resolved to private IP %s", hostname, ip_str)
+                    logger.warning(
+                        "SSRF blocked: %s resolved to private IP %s", hostname, ip_str
+                    )
                     return False
 
             return True
@@ -102,7 +104,7 @@ def is_public_http_url(url: str) -> bool:
         return False
 
 
-def get_twilio_media_auth(url: str) -> Optional[Tuple[str, str]]:
+def get_twilio_media_auth(url: str) -> Optional[tuple[str, str]]:
     """
     Return Basic Auth (sid, token) for Twilio URLs only. Never for non-Twilio hosts.
 
@@ -123,15 +125,12 @@ def get_twilio_media_auth(url: str) -> Optional[Tuple[str, str]]:
         return None
 
 
-
-
-
 def safe_get(
     url: str,
     max_redirects: int = 3,
     timeout: int = 10,
     headers: Optional[dict] = None,
-    auth: Optional[Tuple[str, str]] = None,
+    auth: Optional[tuple[str, str]] = None,
     **kwargs,
 ) -> requests.Response:
     """
@@ -150,7 +149,9 @@ def safe_get(
         # BUG-06 / Credential isolation: only attach Twilio auth if destination is
         # still api.twilio.com. get_twilio_media_auth(url) returns None for any
         # non-Twilio host, so auth is automatically dropped on CDN redirect hops.
-        should_send_auth = auth is not None and get_twilio_media_auth(current_url) is not None
+        should_send_auth = (
+            auth is not None and get_twilio_media_auth(current_url) is not None
+        )
         req_auth = auth if should_send_auth else None
 
         req_headers = {"User-Agent": "MUMBAI express/1.0 (+https://MUMBAI express.org)"}

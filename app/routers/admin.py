@@ -27,6 +27,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 # ── Auth dependency ───────────────────────────────────────────────────────────
 
+
 def _require_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> None:
     """
     Validate the incoming request against administrative credentials.
@@ -49,6 +50,7 @@ def _require_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> None:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/stats", summary="Return claim volume and verdict distribution")
 def get_stats(x_api_key: str = Header(..., alias="X-API-Key")) -> dict:
     """
@@ -63,6 +65,7 @@ def get_stats(x_api_key: str = Header(..., alias="X-API-Key")) -> dict:
 
     from app.core.cache import _memory_cache
     from app.db.claims_db import query_stats
+
     db_stats = query_stats()
 
     return {
@@ -90,6 +93,7 @@ def get_claims(
     _require_api_key(x_api_key)
 
     from app.db.claims_db import query_claims
+
     total, rows = query_claims(page=page, limit=limit, verdict=verdict)
 
     return {
@@ -101,11 +105,16 @@ def get_claims(
     }
 
 
-@router.patch("/claims/{claim_id}/override", summary="Manually override a claim verdict")
+@router.patch(
+    "/claims/{claim_id}/override", summary="Manually override a claim verdict"
+)
 def override_claim_verdict(
     claim_id: int,
     x_api_key: str = Header(..., alias="X-API-Key"),
-    new_verdict: str = Query(..., description="New verdict: REFUTED | SUPPORTED | PARTIALLY_SUPPORTED | UNVERIFIABLE"),
+    new_verdict: str = Query(
+        ...,
+        description="New verdict: REFUTED | SUPPORTED | PARTIALLY_SUPPORTED | UNVERIFIABLE",
+    ),
     reason: str = Query(default="", description="Optional reason for override"),
 ) -> dict:
     """
@@ -124,9 +133,16 @@ def override_claim_verdict(
         )
 
     from app.db.claims_db import update_claim_verdict
+
     updated = update_claim_verdict(claim_id, new_verdict.upper())
 
-    logger.info("Admin verdict override: claim_id=%s new_verdict=%s reason=%s updated=%s", claim_id, new_verdict, reason, updated)
+    logger.info(
+        "Admin verdict override: claim_id=%s new_verdict=%s reason=%s updated=%s",
+        claim_id,
+        new_verdict,
+        reason,
+        updated,
+    )
 
     return {
         "claim_id": claim_id,

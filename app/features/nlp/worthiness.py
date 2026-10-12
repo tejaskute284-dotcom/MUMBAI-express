@@ -1,4 +1,4 @@
-﻿"""
+r"""
 app/features/nlp/worthiness.py
 ───────────────────────────────
 Check-worthiness scorer for prioritizing factual claims over greetings,
@@ -103,7 +103,11 @@ def is_pure_question(text: str) -> bool:
     if not cleaned:
         return False
     is_q = cleaned.endswith("?") or bool(
-        re.match(r"^(?:who|what|where|when|why|how|can\s+you|are\s+you)\b", cleaned, re.IGNORECASE)
+        re.match(
+            r"^(?:who|what|where|when|why|how|can\s+you|are\s+you)\b",
+            cleaned,
+            re.IGNORECASE,
+        )
     )
     # "Did the government ban X?" ends with "?" but contains a factual marker → not pure.
     return bool(is_q and not FACTUAL_REGEX.search(cleaned))

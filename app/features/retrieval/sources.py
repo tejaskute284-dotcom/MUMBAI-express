@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/features/retrieval/sources.py
 ──────────────────────────────────
 Source domain classification and tier assignment.
@@ -37,8 +37,8 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Optional
 from urllib.parse import urlparse
-from typing import Dict, List, Optional
 
 import yaml
 
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 # In-memory cached source definitions.
 # Populated on first call to load_sources_config(); never evicted (stable list).
-_sources_cache: Optional[Dict[str, List[str]]] = None
+_sources_cache: Optional[dict[str, list[str]]] = None
 
 
 def get_sources_config_path() -> str:
@@ -59,7 +59,7 @@ def get_sources_config_path() -> str:
     return os.path.join(base_dir, "config", "sources.yaml")
 
 
-def load_sources_config() -> Dict[str, List[str]]:
+def load_sources_config() -> dict[str, list[str]]:
     """
     Load tiered domain lists from config/sources.yaml.
     Falls back to embedded defaults if file is unavailable.
@@ -79,27 +79,57 @@ def load_sources_config() -> Dict[str, List[str]]:
                 _sources_cache = data
                 return _sources_cache
         except Exception as exc:
-            logger.warning("Failed to load %s: %s. Using default sources.", config_path, exc)
+            logger.warning(
+                "Failed to load %s: %s. Using default sources.", config_path, exc
+            )
 
     # Embedded fallback — mirrors config/sources.yaml; kept in sync manually.
     _sources_cache = {
         "tier_1_ifcn": [
-            "altnews.in", "boomlive.in", "factly.in", "thequint.com",
-            "vishvasnews.com", "newschecker.in", "thip.media", "factcheck.org",
-            "politifact.com", "snopes.com", "reuters.com", "afp.com",
+            "altnews.in",
+            "boomlive.in",
+            "factly.in",
+            "thequint.com",
+            "vishvasnews.com",
+            "newschecker.in",
+            "thip.media",
+            "factcheck.org",
+            "politifact.com",
+            "snopes.com",
+            "reuters.com",
+            "afp.com",
         ],
         "tier_2_gov_pib": [
-            "pib.gov.in", "mygov.in", "mohfw.gov.in", "icmr.gov.in", "who.int",
-            "rbi.org.in", "npci.org.in", "cert-in.org.in", "sebi.gov.in", "uidai.gov.in",
-            "india.gov.in", "incometax.gov.in", "incometaxindia.gov.in",
-            "isro.gov.in", "ecisveep.nic.in",
+            "pib.gov.in",
+            "mygov.in",
+            "mohfw.gov.in",
+            "icmr.gov.in",
+            "who.int",
+            "rbi.org.in",
+            "npci.org.in",
+            "cert-in.org.in",
+            "sebi.gov.in",
+            "uidai.gov.in",
+            "india.gov.in",
+            "incometax.gov.in",
+            "incometaxindia.gov.in",
+            "isro.gov.in",
+            "ecisveep.nic.in",
         ],
         "tier_3_mainstream": [
-            "thehindu.com", "indianexpress.com", "bbc.com", "bbc.co.uk",
-            "ndtv.com", "apnews.com", "hindustantimes.com", "timesofindia.indiatimes.com",
+            "thehindu.com",
+            "indianexpress.com",
+            "bbc.com",
+            "bbc.co.uk",
+            "ndtv.com",
+            "apnews.com",
+            "hindustantimes.com",
+            "timesofindia.indiatimes.com",
         ],
         "tier_4_wikipedia": [
-            "wikipedia.org", "en.wikipedia.org", "hi.wikipedia.org",
+            "wikipedia.org",
+            "en.wikipedia.org",
+            "hi.wikipedia.org",
         ],
     }
     return _sources_cache
@@ -134,7 +164,7 @@ def classify_domain(url: str) -> Tier:
 
         sources = load_sources_config()
 
-        def _matches(domain_list: List[str]) -> bool:
+        def _matches(domain_list: list[str]) -> bool:
             for d in domain_list:
                 d = d.lower().strip()
                 # Exact match OR subdomain: health.who.int matches who.int

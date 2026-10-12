@@ -17,15 +17,19 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List
 from urllib.parse import urlparse
 
 import requests
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.contracts.models import EvidenceItem
 from app.core.config import settings
-from app.core.constants import Rating, Tier
+from app.core.constants import Tier
 from app.core.redaction import redact_for_external
 from app.core.security import is_public_http_url
 from app.features.retrieval.ratings import normalize_rating
@@ -36,21 +40,181 @@ logger = logging.getLogger(__name__)
 API_URL = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
 
 _STOPWORDS = {
-    "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't",
-    "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by",
-    "can", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing",
-    "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't",
-    "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself",
-    "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is",
-    "isn't", "it", "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no",
-    "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves",
-    "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so",
-    "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then",
-    "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those",
-    "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll",
-    "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which",
-    "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd",
-    "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"
+    "a",
+    "about",
+    "above",
+    "after",
+    "again",
+    "against",
+    "all",
+    "am",
+    "an",
+    "and",
+    "any",
+    "are",
+    "aren't",
+    "as",
+    "at",
+    "be",
+    "because",
+    "been",
+    "before",
+    "being",
+    "below",
+    "between",
+    "both",
+    "but",
+    "by",
+    "can",
+    "can't",
+    "cannot",
+    "could",
+    "couldn't",
+    "did",
+    "didn't",
+    "do",
+    "does",
+    "doesn't",
+    "doing",
+    "don't",
+    "down",
+    "during",
+    "each",
+    "few",
+    "for",
+    "from",
+    "further",
+    "had",
+    "hadn't",
+    "has",
+    "hasn't",
+    "have",
+    "haven't",
+    "having",
+    "he",
+    "he'd",
+    "he'll",
+    "he's",
+    "her",
+    "here",
+    "here's",
+    "hers",
+    "herself",
+    "him",
+    "himself",
+    "his",
+    "how",
+    "how's",
+    "i",
+    "i'd",
+    "i'll",
+    "i'm",
+    "i've",
+    "if",
+    "in",
+    "into",
+    "is",
+    "isn't",
+    "it",
+    "it's",
+    "its",
+    "itself",
+    "let's",
+    "me",
+    "more",
+    "most",
+    "mustn't",
+    "my",
+    "myself",
+    "no",
+    "nor",
+    "not",
+    "of",
+    "off",
+    "on",
+    "once",
+    "only",
+    "or",
+    "other",
+    "ought",
+    "our",
+    "ours",
+    "ourselves",
+    "out",
+    "over",
+    "own",
+    "same",
+    "shan't",
+    "she",
+    "she'd",
+    "she'll",
+    "she's",
+    "should",
+    "shouldn't",
+    "so",
+    "some",
+    "such",
+    "than",
+    "that",
+    "that's",
+    "the",
+    "their",
+    "theirs",
+    "them",
+    "themselves",
+    "then",
+    "there",
+    "there's",
+    "these",
+    "they",
+    "they'd",
+    "they'll",
+    "they're",
+    "they've",
+    "this",
+    "those",
+    "through",
+    "to",
+    "too",
+    "under",
+    "until",
+    "up",
+    "very",
+    "was",
+    "wasn't",
+    "we",
+    "we'd",
+    "we'll",
+    "we're",
+    "we've",
+    "were",
+    "weren't",
+    "what",
+    "what's",
+    "when",
+    "when's",
+    "where",
+    "where's",
+    "which",
+    "while",
+    "who",
+    "who's",
+    "whom",
+    "why",
+    "why's",
+    "with",
+    "won't",
+    "would",
+    "wouldn't",
+    "you",
+    "you'd",
+    "you'll",
+    "you're",
+    "you've",
+    "your",
+    "yours",
+    "yourself",
+    "yourselves",
 }
 
 
@@ -61,7 +225,7 @@ def _normalize_token(w: str) -> str:
         if len(w) > len(suffix) + 2 and w.endswith(suffix):
             if suffix == "ies":
                 return w[:-3] + "y"
-            return w[:-len(suffix)]
+            return w[: -len(suffix)]
     return w
 
 
@@ -113,7 +277,7 @@ def _fetch_google_fact_check(query: str, api_key: str) -> dict:
     return resp.json()
 
 
-def search_google_fact_check(query: str) -> List[EvidenceItem]:
+def search_google_fact_check(query: str) -> list[EvidenceItem]:
     """
     Search Google Fact Check API for verified claim reviews matching query.
     Returns a list of structured EvidenceItem objects.
@@ -129,9 +293,11 @@ def search_google_fact_check(query: str) -> List[EvidenceItem]:
     cleaned_query = redact_for_external(query.strip())
 
     try:
-        data = _fetch_google_fact_check(cleaned_query, settings.google_fact_check_api_key)
+        data = _fetch_google_fact_check(
+            cleaned_query, settings.google_fact_check_api_key
+        )
         claims = data.get("claims", [])
-        evidence_items: List[EvidenceItem] = []
+        evidence_items: list[EvidenceItem] = []
 
         for item in claims:
             claim_text = item.get("text", "")
@@ -195,7 +361,9 @@ def search_google_fact_check(query: str) -> List[EvidenceItem]:
                         )
                     )
 
-        logger.info("Google Fact Check found %d evidence items for query.", len(evidence_items))
+        logger.info(
+            "Google Fact Check found %d evidence items for query.", len(evidence_items)
+        )
         return evidence_items
 
     except Exception as exc:

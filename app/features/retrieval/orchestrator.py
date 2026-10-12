@@ -49,14 +49,17 @@ import concurrent.futures
 import logging
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 from app.contracts.models import EvidenceItem
 from app.core.config import settings
 from app.core.constants import Tier
 from app.features.retrieval.factcheck_google import search_google_fact_check
-from app.features.retrieval.official_search import route_claim_topic, search_official_sources
+from app.features.retrieval.official_search import (
+    route_claim_topic,
+    search_official_sources,
+)
 from app.features.retrieval.search_web import search_web
 from app.features.retrieval.wikipedia import search_wikipedia
 
@@ -64,7 +67,7 @@ logger = logging.getLogger(__name__)
 
 # Tier rank map: lower integer = higher trust.
 # Used as the primary sort key for the final deduped evidence list.
-TIER_ORDER: Dict[Tier, int] = {
+TIER_ORDER: dict[Tier, int] = {
     Tier.TIER_1_IFCN: 0,
     Tier.TIER_2_GOV_PIB: 1,
     Tier.TIER_3_MAINSTREAM: 2,
@@ -77,7 +80,7 @@ TIER_ORDER: Dict[Tier, int] = {
 # Thread-safe access via _CACHE_LOCK.
 # Stored value: (expires_at: float, items: List[EvidenceItem])
 _CACHE_LOCK = threading.Lock()
-_EVIDENCE_CACHE: Dict[str, tuple[float, List[EvidenceItem]]] = {}
+_EVIDENCE_CACHE: dict[str, tuple[float, list[EvidenceItem]]] = {}
 DEFAULT_CACHE_TTL_SEC: float = 600.0  # 10 minutes
 
 
@@ -96,7 +99,7 @@ def clear_evidence_cache() -> None:
         _EVIDENCE_CACHE.clear()
 
 
-def get_cached_evidence(claim: str) -> Optional[List[EvidenceItem]]:
+def get_cached_evidence(claim: str) -> Optional[list[EvidenceItem]]:
     """
     Retrieve unexpired cached evidence for the given claim.
     Returns items marked with from_cache=True, or None if missing/expired.
@@ -117,7 +120,9 @@ def get_cached_evidence(claim: str) -> Optional[List[EvidenceItem]]:
         return [item.model_copy(update={"from_cache": True}) for item in items]
 
 
-def set_cached_evidence(claim: str, items: List[EvidenceItem], ttl_sec: float = DEFAULT_CACHE_TTL_SEC) -> None:
+def set_cached_evidence(
+    claim: str, items: list[EvidenceItem], ttl_sec: float = DEFAULT_CACHE_TTL_SEC
+) -> None:
     """
     Store evidence items in the TTL cache for the given claim.
     Uses monotonic time so wall-clock adjustments (DST, NTP) don't corrupt expiry.
@@ -145,9 +150,9 @@ def normalize_url_for_dedupe(url: str) -> str:
 
 def retrieve_evidence(
     claim: str,
-    keywords: Optional[List[str]] = None,
+    keywords: Optional[list[str]] = None,
     budget_ms: Optional[int] = None,
-) -> List[EvidenceItem]:
+) -> list[EvidenceItem]:
     """
     Orchestrate multi-source evidence retrieval in parallel with hard time budget.
     Checks TTL cache first; on miss, fetches sources concurrently.
@@ -172,19 +177,26 @@ def retrieve_evidence(
 
     # PII-redact before any external dispatch or cache key construction.
     from app.core.redaction import redact_for_external
+
     cleaned_claim = redact_for_external(claim.strip())
 
     # Check evidence cache first; avoids API round-trips on repeated claims.
     cached = get_cached_evidence(cleaned_claim)
     if cached is not None:
-        logger.info("Serving %d evidence items from cache for claim: '%s'", len(cached), cleaned_claim[:40])
+        logger.info(
+            "Serving %d evidence items from cache for claim: '%s'",
+            len(cached),
+            cleaned_claim[:40],
+        )
         return cached
 
     timeout_sec = (budget_ms or settings.retrieval_budget_ms) / 1000.0
     # Wikipedia query: use first 3 keywords if available for better precision.
-    wiki_query = " ".join(keywords[:3]) if (keywords and len(keywords) > 0) else cleaned_claim
+    wiki_query = (
+        " ".join(keywords[:3]) if (keywords and len(keywords) > 0) else cleaned_claim
+    )
 
-    collected_evidence: List[EvidenceItem] = []
+    collected_evidence: list[EvidenceItem] = []
 
     # Determine whether a topic-specific official search is warranted.
     topic, official_domains = route_claim_topic(cleaned_claim)
@@ -204,7 +216,9 @@ def retrieve_evidence(
         }
         if official_domains:
             # Official search is additive; launched only for health/gov/finance claims.
-            future_official = executor.submit(search_official_sources, cleaned_claim, official_domains)
+            future_official = executor.submit(
+                search_official_sources, cleaned_claim, official_domains
+            )
             futures_map[future_official] = f"official_search_{topic}"
 
         done, not_done = concurrent.futures.wait(
@@ -216,7 +230,11 @@ def retrieve_evidence(
         # Log and cancel sources that breached the time budget.
         for f in not_done:
             name = futures_map[f]
-            logger.warning("Retrieval source '%s' exceeded timeout budget (%.1fs). Cancelled.", name, timeout_sec)
+            logger.warning(
+                "Retrieval source '%s' exceeded timeout budget (%.1fs). Cancelled.",
+                name,
+                timeout_sec,
+            )
             f.cancel()
 
         for f in done:
@@ -238,7 +256,7 @@ def retrieve_evidence(
     # Deduplicate by normalised URL, keeping the first occurrence
     # (which will be the highest-tier result due to fan-out ordering).
     seen_urls: set = set()
-    deduped_evidence: List[EvidenceItem] = []
+    deduped_evidence: list[EvidenceItem] = []
 
     for item in collected_evidence:
         norm_url = normalize_url_for_dedupe(item.url)

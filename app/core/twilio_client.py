@@ -6,7 +6,6 @@ Sends outbound WhatsApp / SMS messages synchronously or in a background executor
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from app.core.config import settings
 
@@ -24,15 +23,20 @@ def send_twilio_message(to_number: str, body: str) -> bool:
     - Exception isolation: Logs network/auth failures without crashing worker threads.
     """
     if not (settings.account_sid and settings.auth_token):
-        logger.debug("Twilio credentials not configured; skipping outbound REST message.")
+        logger.debug(
+            "Twilio credentials not configured; skipping outbound REST message."
+        )
         return False
 
     if "mock" in settings.account_sid.lower() or "test" in settings.account_sid.lower():
-        logger.debug("Mock Twilio credentials detected; skipping outbound network call.")
+        logger.debug(
+            "Mock Twilio credentials detected; skipping outbound network call."
+        )
         return True
 
     try:
         from twilio.rest import Client
+
         client = Client(settings.account_sid, settings.auth_token)
         from_num = settings.sender_number
 
@@ -44,14 +48,18 @@ def send_twilio_message(to_number: str, body: str) -> bool:
         # translate_reply_back() can produce longer output than the English source
         WHATSAPP_MAX_CHARS = 4096
         if len(body) > WHATSAPP_MAX_CHARS:
-            body = body[:WHATSAPP_MAX_CHARS - 3] + "…"
+            body = body[: WHATSAPP_MAX_CHARS - 3] + "…"
 
         msg = client.messages.create(
             body=body,
             from_=from_num,
             to=to_number,
         )
-        logger.info("Sent Twilio message to %s (SID: %s)", to_number, getattr(msg, "sid", "unknown"))
+        logger.info(
+            "Sent Twilio message to %s (SID: %s)",
+            to_number,
+            getattr(msg, "sid", "unknown"),
+        )
         return True
     except Exception as exc:
         logger.error("Failed to send Twilio message to %s: %s", to_number, exc)

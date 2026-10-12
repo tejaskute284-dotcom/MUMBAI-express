@@ -18,7 +18,7 @@ Latency & Safety SLA:
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from app.contracts.models import ClaimResult, EvidenceItem
 from app.core.config import settings
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 def _gemini_verify_claim(
     claim: str,
-    evidence_items: List[EvidenceItem],
-) -> Optional[Tuple[Verdict, float, str]]:
+    evidence_items: list[EvidenceItem],
+) -> Optional[tuple[Verdict, float, str]]:
     """
     Holistically verify a claim against retrieved evidence using Gemini reasoning.
     Returns (Verdict, confidence, reason_code) or None on failure/missing key.
@@ -43,17 +43,15 @@ def _gemini_verify_claim(
 
     try:
         import json
-        from google import genai
-
-        client = genai.Client(api_key=settings.gemini_api_key)
 
         items_desc = []
         from datetime import date as _date
+
         today_str = _date.today().isoformat()
         for idx, item in enumerate(evidence_items[:6]):
             pub_date = getattr(item, "publish_date", None) or "date unknown"
             items_desc.append(
-                f"[{idx+1}] Source: {item.source_domain} | Published: {pub_date}"
+                f"[{idx + 1}] Source: {item.source_domain} | Published: {pub_date}"
                 f" | Title: {item.title[:150].strip()} | Snippet: {item.snippet[:300].strip()}"
             )
 
@@ -88,6 +86,7 @@ Output strictly valid JSON with NO markdown formatting:
 }}
 """
         from app.core.gemini_client import call_gemini
+
         raw_text = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
 
         if not raw_text:
@@ -117,7 +116,11 @@ Output strictly valid JSON with NO markdown formatting:
         }
 
         if verdict_str in verdict_map:
-            logger.info("Gemini holistic verification verdict: %s (conf: %.2f)", verdict_str, conf)
+            logger.info(
+                "Gemini holistic verification verdict: %s (conf: %.2f)",
+                verdict_str,
+                conf,
+            )
             return verdict_map[verdict_str], conf, "GEMINI_VERIFICATION"
 
     except Exception as exc:
@@ -126,7 +129,7 @@ Output strictly valid JSON with NO markdown formatting:
     return None
 
 
-def _gemini_knowledge_verify(claim: str) -> Optional[Tuple[Verdict, float, str]]:
+def _gemini_knowledge_verify(claim: str) -> Optional[tuple[Verdict, float, str]]:
     """
     Ask Gemini to verify a claim using its own knowledge when retrieved evidence is insufficient.
     Targets well-known Indian hoaxes, government policies, health myths, viral rumors.
@@ -136,8 +139,9 @@ def _gemini_knowledge_verify(claim: str) -> Optional[Tuple[Verdict, float, str]]
 
     try:
         import json
-        from app.core.redaction import redact_for_external
+
         from app.core.gemini_client import call_gemini
+        from app.core.redaction import redact_for_external
 
         redacted = redact_for_external(claim)
 
@@ -190,7 +194,7 @@ Respond with valid JSON only:
 
 def verify_claim(
     claim: str,
-    keywords: Optional[List[str]] = None,
+    keywords: Optional[list[str]] = None,
     budget_ms: int = 12000,
 ) -> ClaimResult:
     """
@@ -221,19 +225,23 @@ def verify_claim(
 
     # MISSING-02: Check dynamic claim-level cache
     from app.core.cache import claim_cache_get, claim_cache_set
+
     cached_claim = claim_cache_get(claim.strip())
     if cached_claim:
         logger.info("Claim-level cache hit for: '%.60s'", claim)
         return ClaimResult(**cached_claim)
 
     # ── Check Pre-verified Claim Bank (Fast-path) ────────────────────────────
-    from app.features.verification.claim_bank import lookup_claim_bank
     from app.core.constants import Rating, Tier
+    from app.features.verification.claim_bank import lookup_claim_bank
+
     bank_match = lookup_claim_bank(claim.strip())
     if bank_match and bank_match.is_decisive:
         logger.info(
             "Claim Bank match found for '%.60s' -> %s (%s)",
-            claim, bank_match.verdict, bank_match.publisher,
+            claim,
+            bank_match.verdict,
+            bank_match.publisher,
         )
         bank_item = EvidenceItem(
             url=bank_match.source_url or "https://factcheck.org",
@@ -242,14 +250,18 @@ def verify_claim(
             source_domain=bank_match.publisher.lower().replace(" ", "") + ".org",
             tier=Tier.TIER_1_IFCN,
             rating=(
-                Rating.FALSE if bank_match.verdict == Verdict.REFUTED
-                else Rating.TRUE if bank_match.verdict == Verdict.SUPPORTED
+                Rating.FALSE
+                if bank_match.verdict == Verdict.REFUTED
+                else Rating.TRUE
+                if bank_match.verdict == Verdict.SUPPORTED
                 else Rating.UNVERIFIED
             ),
             score=bank_match.confidence,
             stance=(
-                "REFUTES" if bank_match.verdict == Verdict.REFUTED
-                else "SUPPORTS" if bank_match.verdict == Verdict.SUPPORTED
+                "REFUTES"
+                if bank_match.verdict == Verdict.REFUTED
+                else "SUPPORTS"
+                if bank_match.verdict == Verdict.SUPPORTED
                 else "NEUTRAL"
             ),
             reason="CLAIM_BANK_GOLD_MATCH",
@@ -267,7 +279,8 @@ def verify_claim(
                 combined_evidence = [bank_item] + live_evidence[:3]
             except Exception as exc:
                 logger.warning(
-                    "Live evidence fetch failed for TRUE bank claim: %s. Bank item only.", exc
+                    "Live evidence fetch failed for TRUE bank claim: %s. Bank item only.",
+                    exc,
                 )
                 combined_evidence = [bank_item]
         else:
@@ -285,7 +298,7 @@ def verify_claim(
         )
 
     with StageTimer("retrieval") as t_ret:
-        evidence: List[EvidenceItem] = retrieve_evidence(
+        evidence: list[EvidenceItem] = retrieve_evidence(
             claim=claim.strip(),
             keywords=keywords,
             budget_ms=budget_ms,
@@ -299,15 +312,25 @@ def verify_claim(
             snippet=bank_match.explanation or bank_match.citation,
             source_domain=bank_match.publisher.lower().replace(" ", "") + ".org",
             tier=Tier.TIER_1_IFCN,
-            rating=Rating.FALSE if bank_match.verdict == Verdict.REFUTED else (Rating.TRUE if bank_match.verdict == Verdict.SUPPORTED else Rating.UNVERIFIED),
+            rating=Rating.FALSE
+            if bank_match.verdict == Verdict.REFUTED
+            else (
+                Rating.TRUE
+                if bank_match.verdict == Verdict.SUPPORTED
+                else Rating.UNVERIFIED
+            ),
             score=bank_match.confidence,
-            stance="REFUTES" if bank_match.verdict == Verdict.REFUTED else ("SUPPORTS" if bank_match.verdict == Verdict.SUPPORTED else "NEUTRAL"),
+            stance="REFUTES"
+            if bank_match.verdict == Verdict.REFUTED
+            else ("SUPPORTS" if bank_match.verdict == Verdict.SUPPORTED else "NEUTRAL"),
             reason="CLAIM_BANK_HISTORICAL_CONTEXT",
             publish_date=bank_match.published_date or None,
         )
         evidence.insert(0, bank_item)
 
-    logger.info("Retrieval completed in %.0fms, %d items", t_ret.elapsed_ms, len(evidence))
+    logger.info(
+        "Retrieval completed in %.0fms, %d items", t_ret.elapsed_ms, len(evidence)
+    )
 
     with StageTimer("stance_scoring"):
         evidence = score_stance(claim=claim.strip(), evidence_items=evidence)
@@ -325,20 +348,31 @@ def verify_claim(
             gemini_result = _gemini_verify_claim(claim.strip(), evidence)
             if gemini_result:
                 g_verdict, g_conf, g_reason = gemini_result
-                has_strong_evidence = any(getattr(i, "tier", None) in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB, Tier.TIER_3_MAINSTREAM) for i in evidence)
+                has_strong_evidence = any(
+                    getattr(i, "tier", None)
+                    in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB, Tier.TIER_3_MAINSTREAM)
+                    for i in evidence
+                )
                 if g_verdict == Verdict.SUPPORTED and not has_strong_evidence:
-                    logger.info("Gemini SUPPORTED override blocked: insufficient decisive tier evidence (AT14)")
+                    logger.info(
+                        "Gemini SUPPORTED override blocked: insufficient decisive tier evidence (AT14)"
+                    )
                 else:
                     verdict, confidence, reason_code = g_verdict, g_conf, g_reason
-                    logger.info("Gemini evidence-based override: verdict=%s conf=%.2f", verdict, confidence)
+                    logger.info(
+                        "Gemini evidence-based override: verdict=%s conf=%.2f",
+                        verdict,
+                        confidence,
+                    )
 
         # Pass 2: If still UNVERIFIABLE, ask Gemini using its own parametric knowledge
         if verdict == Verdict.UNVERIFIABLE and settings.gemini_api_key:
             gemini_kb_result = _gemini_knowledge_verify(claim.strip())
             if gemini_kb_result:
                 verdict, confidence, reason_code = gemini_kb_result
-                logger.info("Gemini KB override: verdict=%s conf=%.2f", verdict, confidence)
-
+                logger.info(
+                    "Gemini KB override: verdict=%s conf=%.2f", verdict, confidence
+                )
 
     logger.info(
         "Claim verdict=%s confidence=%.2f reason=%s evidence_count=%d",
@@ -366,10 +400,10 @@ def verify_claim(
 
 
 def batch_verify_claims(
-    claims: List[str],
-    keywords: Optional[List[str]] = None,
+    claims: list[str],
+    keywords: Optional[list[str]] = None,
     budget_ms: int = 12000,
-) -> List[ClaimResult]:
+) -> list[ClaimResult]:
     """
     Verify multiple claims sequentially.
     Each claim receives its own retrieval pass.
@@ -387,7 +421,7 @@ def batch_verify_claims(
         return []
 
     per_claim_budget = max(1000, budget_ms // len(claims))
-    results: List[ClaimResult] = []
+    results: list[ClaimResult] = []
 
     for idx, claim in enumerate(claims):
         logger.info("Verifying claim %d/%d: %.80s…", idx + 1, len(claims), claim)

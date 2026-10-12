@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List, Optional
+from typing import Optional
 
 from app.core.config import settings
 
@@ -25,7 +25,6 @@ FORWARD_PRESSURE_PATTERNS = [
     r"\bforward\s+to\s+everyone\b",
     r"\bviral\s+message\b",
     r"\bwhatsapp\s+group\b",
-
     # Hindi Devanagari patterns
     r"फॉरवर्ड\s*(?:करें|करो|कीजिए)",
     r"शेयर\s*(?:करें|करो|कीजिए)",
@@ -33,7 +32,6 @@ FORWARD_PRESSURE_PATTERNS = [
     r"ग्रुप\s*में\s*(?:भेजें|भेजो)",
     r"ज्यादा\s*से\s*ज्यादा\s*शेयर",
     r"संदेश\s*(?:फॉरवर्ड|शेयर)",
-
     # Hinglish patterns
     r"\bforward\s+karo\b",
     r"\bshare\s+karo\b",
@@ -69,7 +67,7 @@ def has_forward_pressure(text: str) -> bool:
     return bool(FORWARD_PRESSURE_REGEX.search(text))
 
 
-def split_sentences(text: str) -> List[str]:
+def split_sentences(text: str) -> list[str]:
     """
     Split text into clean non-empty sentences using Latin and Indic sentence boundaries.
     """
@@ -84,7 +82,7 @@ def split_sentences(text: str) -> List[str]:
 def extract_claims(
     text: str,
     max_claims: Optional[int] = None,
-) -> List[str]:
+) -> list[str]:
     """
     Extract factual claim candidates from input text.
     Filters out pure forward-instruction fragments and caps to max_claims.
@@ -101,7 +99,7 @@ def extract_claims(
 
     from app.features.nlp.worthiness import is_non_claim
 
-    claims: List[str] = []
+    claims: list[str] = []
     for s in sentences:
         # Check if sentence is purely an instruction to forward with no other content
         if PURE_FORWARD_REGEX.match(s.strip()):

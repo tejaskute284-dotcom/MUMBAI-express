@@ -28,7 +28,12 @@ class StageTimer:
         self.start_time = time.perf_counter()
         return self
 
-    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[object]) -> bool:
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object],
+    ) -> bool:
         self.end_time = time.perf_counter()
         self.elapsed_ms = round((self.end_time - self.start_time) * 1000.0, 2)
         return False

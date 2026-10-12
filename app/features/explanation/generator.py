@@ -16,21 +16,37 @@ from __future__ import annotations
 
 import logging
 import textwrap
-from typing import List
 
 from app.contracts.models import ClaimResult
-from app.core.constants import Verdict
 from app.core.config import settings
+from app.core.constants import Verdict
 
 logger = logging.getLogger(__name__)
 
 from app.features.explanation.formatter import VERDICT_EMOJI, VERDICT_LABEL
 
-
 HEALTH_KEYWORDS = {
-    "cure", "treat", "theek", "bimari", "disease", "cancer", "medicine",
-    "drink", "peene", "health", "chemical", "gas", "fluorine", "bleach",
-    "vaccine", "virus", "covid", "pani", "water", "herb", "ayurved"
+    "cure",
+    "treat",
+    "theek",
+    "bimari",
+    "disease",
+    "cancer",
+    "medicine",
+    "drink",
+    "peene",
+    "health",
+    "chemical",
+    "gas",
+    "fluorine",
+    "bleach",
+    "vaccine",
+    "virus",
+    "covid",
+    "pani",
+    "water",
+    "herb",
+    "ayurved",
 }
 
 
@@ -39,15 +55,18 @@ def _top_evidence_text(result: ClaimResult, max_items: int = 5) -> str:
     Extract most relevant evidence. Prioritises SUPPORTS/REFUTES over NEUTRAL
     so Gemini sees decisive evidence first regardless of score ordering.
     """
+
     def _sort_key(e):
         stance_priority = 0 if e.stance in ("SUPPORTS", "REFUTES") else 1
         return (stance_priority, -e.score)
 
     items = sorted(result.evidence, key=_sort_key)[:max_items]
-    lines: List[str] = []
+    lines: list[str] = []
     for idx, item in enumerate(items, 1):
         stance_tag = f"[{item.stance}] " if item.stance else ""
-        lines.append(f"  {idx}. {stance_tag}{item.snippet[:260].strip()} — {item.source_domain}")
+        lines.append(
+            f"  {idx}. {stance_tag}{item.snippet[:260].strip()} — {item.source_domain}"
+        )
     return "\n".join(lines) if lines else "  (no evidence retrieved)"
 
 
@@ -72,12 +91,16 @@ def _template_explanation(result: ClaimResult) -> str:
     elif result.reason_code == "AUTHORITATIVE_FACT_CHECK":
         lines.append("This verdict is based on an authoritative fact-checking source.")
     elif result.reason_code == "NO_EVIDENCE":
-        lines.append("No relevant evidence was found for this claim. Please verify manually.")
+        lines.append(
+            "No relevant evidence was found for this claim. Please verify manually."
+        )
     elif result.reason_code in ("LOW_EVIDENCE_SIGNAL", "INCONCLUSIVE"):
         lines.append("Evidence was inconclusive. Treat this claim with caution.")
 
     claim_lower = result.claim.lower()
-    if result.verdict == Verdict.UNVERIFIABLE and any(kw in claim_lower for kw in HEALTH_KEYWORDS):
+    if result.verdict == Verdict.UNVERIFIABLE and any(
+        kw in claim_lower for kw in HEALTH_KEYWORDS
+    ):
         lines.append(
             "Health advisory: No scientific or medical evidence supports claims that any household chemical, gas, or unverified substance cures disease. Please consult a certified doctor or check WHO.int and ICMR.gov.in for accurate health information."
         )
@@ -98,8 +121,9 @@ def _gemini_explanation(result: ClaimResult) -> str | None:
     label = VERDICT_LABEL.get(result.verdict, str(result.verdict))
     ev_text = _top_evidence_text(result, max_items=5)
 
-    from app.core.redaction import redact_for_external
     from app.core.gemini_client import call_gemini
+    from app.core.redaction import redact_for_external
+
     redacted_claim = redact_for_external(result.claim[:300])
 
     prompt = textwrap.dedent(f"""
@@ -129,7 +153,12 @@ def _gemini_explanation(result: ClaimResult) -> str | None:
 
     result_text = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
     if result_text:
-        return result_text.replace("**", "").replace("*", "").replace("#", "").replace("`", "")
+        return (
+            result_text.replace("**", "")
+            .replace("*", "")
+            .replace("#", "")
+            .replace("`", "")
+        )
     return None
 
 
@@ -139,6 +168,7 @@ def _evidence_word_pool(result: ClaimResult) -> set[str]:
     Used to validate that each sentence in a Gemini explanation has grounding.
     """
     import re as _re
+
     pool: set[str] = set()
     for item in result.evidence:
         for text in (item.snippet, item.title, item.source_domain):
@@ -155,11 +185,42 @@ def _is_grounded(sentence: str, word_pool: set[str]) -> bool:
     evidence/claim word pool. Sentences with zero overlap are hallucinated.
     """
     import re as _re
-    _STOP = {"the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-              "it", "its", "of", "in", "on", "at", "to", "for", "and", "or", "but",
-              "not", "no", "this", "that", "has", "have", "had", "with", "by"}
-    tokens = {w for w in _re.findall(r"\b[a-z]{3,}\b", sentence.lower())
-              if w not in _STOP}
+
+    _STOP = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "it",
+        "its",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "and",
+        "or",
+        "but",
+        "not",
+        "no",
+        "this",
+        "that",
+        "has",
+        "have",
+        "had",
+        "with",
+        "by",
+    }
+    tokens = {
+        w for w in _re.findall(r"\b[a-z]{3,}\b", sentence.lower()) if w not in _STOP
+    }
     return bool(tokens & word_pool)
 
 
@@ -174,8 +235,11 @@ def _filter_explanation_sentences(text: str, result: ClaimResult) -> str:
 
     # Determine evidence quality
     high_quality_items = [
-        i for i in result.evidence
-        if (i.score or 0.0) >= 0.65 and getattr(i.tier, "value", str(i.tier)) in ("tier_1_ifcn", "tier_2_gov_pib", "tier_3_mainstream")
+        i
+        for i in result.evidence
+        if (i.score or 0.0) >= 0.65
+        and getattr(i.tier, "value", str(i.tier))
+        in ("tier_1_ifcn", "tier_2_gov_pib", "tier_3_mainstream")
     ]
 
     if not result.evidence:
@@ -190,11 +254,13 @@ def _filter_explanation_sentences(text: str, result: ClaimResult) -> str:
     if len(high_quality_items) < 2:
         return text.strip()
 
-
     # Rich evidence available → apply relaxed per-sentence filter
     import re as _re
+
     word_pool = _evidence_word_pool(result)
-    sentences = [s.strip() for s in _re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+    sentences = [
+        s.strip() for s in _re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()
+    ]
 
     grounded = []
     for sentence in sentences:
@@ -222,13 +288,14 @@ def _gemini_quick_context(claim: str, verdict_label: str) -> str | None:
     if not settings.gemini_api_key:
         return None
     try:
-        from app.core.redaction import redact_for_external
         from app.core.gemini_client import call_gemini
+        from app.core.redaction import redact_for_external
+
         prompt = (
             f'A WhatsApp claim says: "{redact_for_external(claim[:200])}"\n'
-            f'Verdict: {verdict_label}\n'
-            f'Write exactly 2 sentences: (1) what the claim says and why it is {verdict_label}, '
-            f'(2) what the actual fact is. Plain text, no formatting.'
+            f"Verdict: {verdict_label}\n"
+            f"Write exactly 2 sentences: (1) what the claim says and why it is {verdict_label}, "
+            f"(2) what the actual fact is. Plain text, no formatting."
         )
         result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
         if result:
@@ -263,5 +330,3 @@ def generate_explanation(result: ClaimResult) -> str:
     # Step 3: Deterministic template (last resort)
     logger.debug("Using template explanation.")
     return _template_explanation(result)
-
-

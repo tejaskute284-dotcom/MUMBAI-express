@@ -38,7 +38,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import Dict, List, Optional
+from typing import Optional
 
 import yaml
 
@@ -47,7 +47,7 @@ from app.core.constants import Rating
 logger = logging.getLogger(__name__)
 
 # Process-lifetime cache; populated on first call to load_rating_mappings().
-_rating_mappings_cache: Optional[Dict[Rating, List[str]]] = None
+_rating_mappings_cache: Optional[dict[Rating, list[str]]] = None
 
 
 def get_verification_config_path() -> str:
@@ -81,25 +81,45 @@ def load_verdict_keywords() -> dict[str, list[str]]:
             with open(kw_path, "r", encoding="utf-8") as f:
                 content = yaml.safe_load(f) or {}
                 return {
-                    "partly_supported_keywords": content.get("partly_supported_keywords", []),
+                    "partly_supported_keywords": content.get(
+                        "partly_supported_keywords", []
+                    ),
                     "outdated_keywords": content.get("outdated_keywords", []),
                 }
         except Exception as exc:
             logger.warning("Failed to load %s: %s", kw_path, exc)
     return {
         "partly_supported_keywords": [
-            "partly true", "half true", "mixture", "mostly true", "mostly false",
-            "partly false", "mixed", "partially true", "partially false"
+            "partly true",
+            "half true",
+            "mixture",
+            "mostly true",
+            "mostly false",
+            "partly false",
+            "mixed",
+            "partially true",
+            "partially false",
         ],
         "outdated_keywords": [
-            "old", "outdated", "old video", "old photo", "old image", "recycled",
-            "no longer", "expired", "not current", "not recent", "from [year]",
-            "circulating again", "previously", "misleading context"
+            "old",
+            "outdated",
+            "old video",
+            "old photo",
+            "old image",
+            "recycled",
+            "no longer",
+            "expired",
+            "not current",
+            "not recent",
+            "from [year]",
+            "circulating again",
+            "previously",
+            "misleading context",
         ],
     }
 
 
-def load_rating_mappings() -> Dict[Rating, List[str]]:
+def load_rating_mappings() -> dict[Rating, list[str]]:
     """
     Load rating mappings from config/verification.yaml and config/verdict_keywords.yaml.
     Falls back to built-in rules if file is missing.
@@ -120,37 +140,70 @@ def load_rating_mappings() -> Dict[Rating, List[str]]:
                 content = yaml.safe_load(f) or {}
                 raw_dict = content.get("rating_mappings", {})
         except Exception as exc:
-            logger.warning("Failed to load %s: %s. Using default ratings.", config_path, exc)
+            logger.warning(
+                "Failed to load %s: %s. Using default ratings.", config_path, exc
+            )
 
     if not raw_dict:
         # Embedded fallback — keeps service functional when config is absent.
         # Hindi terms (गलत, झूठ, भ्रामक…) support Devanagari-script inputs.
         raw_dict = {
             "FALSE": [
-                "false", "fake", "incorrect", "fabricated", "hoax", "untrue",
-                "debunked", "pants on fire", "scam", "doctored", "manipulated",
-                "misattributed", "गलत", "झूठ", "फेक", "अफवाह",
+                "false",
+                "fake",
+                "incorrect",
+                "fabricated",
+                "hoax",
+                "untrue",
+                "debunked",
+                "pants on fire",
+                "scam",
+                "doctored",
+                "manipulated",
+                "misattributed",
+                "गलत",
+                "झूठ",
+                "फेक",
+                "अफवाह",
             ],
             "MISLEADING": [
-                "misleading", "out of context", "missing context", "altered",
-                "भ्रामक", "संदर्भहीन",
+                "misleading",
+                "out of context",
+                "missing context",
+                "altered",
+                "भ्रामक",
+                "संदर्भहीन",
             ],
             "PARTLY_TRUE": [
-                "partly true", "partially true", "half true", "mixed",
-                "mostly false", "mostly true", "अंशतः सत्य", "आधा सच",
+                "partly true",
+                "partially true",
+                "half true",
+                "mixed",
+                "mostly false",
+                "mostly true",
+                "अंशतः सत्य",
+                "आधा सच",
             ],
             "TRUE": [
-                "true", "correct", "accurate", "verified", "confirmed",
-                "सत्य", "सही", "पुष्ट",
+                "true",
+                "correct",
+                "accurate",
+                "verified",
+                "confirmed",
+                "सत्य",
+                "सही",
+                "पुष्ट",
             ],
         }
 
     # Merge in keywords from verdict_keywords.yaml (additive; no override).
     vk = load_verdict_keywords()
     raw_dict.setdefault("OUTDATED", []).extend(vk.get("outdated_keywords", []))
-    raw_dict.setdefault("PARTLY_TRUE", []).extend(vk.get("partly_supported_keywords", []))
+    raw_dict.setdefault("PARTLY_TRUE", []).extend(
+        vk.get("partly_supported_keywords", [])
+    )
 
-    parsed: Dict[Rating, List[str]] = {}
+    parsed: dict[Rating, list[str]] = {}
     for key, phrases in raw_dict.items():
         try:
             # Guard against PyYAML boolean coercion of 'true'/'false' keys.
@@ -198,7 +251,7 @@ def normalize_rating(raw_rating: Optional[str]) -> Rating:
 
     # Flatten and sort candidate phrases by length descending.
     # This ensures "mostly false" matches PARTLY_TRUE before "false" matches FALSE.
-    all_candidates: List[tuple[str, Rating]] = []
+    all_candidates: list[tuple[str, Rating]] = []
     for rating_enum, phrases in mappings.items():
         for phrase in phrases:
             all_candidates.append((phrase, rating_enum))

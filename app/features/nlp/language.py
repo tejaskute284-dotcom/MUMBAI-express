@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +51,51 @@ def set_ft_model(model: Any) -> None:
 # Common Romanized Hindi markers for Hinglish detection.
 # Threshold: ≥2 distinct matches in the token set triggers hi-Latn classification.
 HINGLISH_VOCABULARY = {
-    "yeh", "ye", "woh", "wo", "karo", "kare", "karna", "hoga", "hogi", "honge",
-    "hai", "hain", "ho", "nahi", "mat", "bhi", "aur", "ko", "ka", "ki", "ke",
-    "apne", "sabko", "bhejo", "milega", "milegi", "milenge", "kripya", "dekho",
-    "dekhlo", "suno", "kisi", "kya", "kyun", "kab", "kahan", "kaise", "batao",
-    "paise", "paisa", "rupaye", "rupayee", "khabar", "suchna", "sarkari",
+    "yeh",
+    "ye",
+    "woh",
+    "wo",
+    "karo",
+    "kare",
+    "karna",
+    "hoga",
+    "hogi",
+    "honge",
+    "hai",
+    "hain",
+    "ho",
+    "nahi",
+    "mat",
+    "bhi",
+    "aur",
+    "ko",
+    "ka",
+    "ki",
+    "ke",
+    "apne",
+    "sabko",
+    "bhejo",
+    "milega",
+    "milegi",
+    "milenge",
+    "kripya",
+    "dekho",
+    "dekhlo",
+    "suno",
+    "kisi",
+    "kya",
+    "kyun",
+    "kab",
+    "kahan",
+    "kaise",
+    "batao",
+    "paise",
+    "paisa",
+    "rupaye",
+    "rupayee",
+    "khabar",
+    "suchna",
+    "sarkari",
 }
 
 # ── Romanized Marathi vocabulary ──────────────────────────────────────────────
@@ -64,20 +104,73 @@ HINGLISH_VOCABULARY = {
 # Threshold: ≥2 distinct matches triggers mr-Latn classification.
 ROMANIZED_MARATHI_VOCABULARY = {
     # Verbs / auxiliary
-    "aahe", "ahe", "ahet", "mhanje", "mhunun", "mhantoy", "mhantaat",
-    "jhalay", "jhale", "jhaali", "zalay", "zale", "zali",
-    "hotay", "hote", "hoti", "hotat", "aala", "aali", "aale",
-    "geloy", "gela", "geli", "gele", "mela", "meli", "mele",
-    "nahi", "naahi", "naste", "navhte", "navhta",
+    "aahe",
+    "ahe",
+    "ahet",
+    "mhanje",
+    "mhunun",
+    "mhantoy",
+    "mhantaat",
+    "jhalay",
+    "jhale",
+    "jhaali",
+    "zalay",
+    "zale",
+    "zali",
+    "hotay",
+    "hote",
+    "hoti",
+    "hotat",
+    "aala",
+    "aali",
+    "aale",
+    "geloy",
+    "gela",
+    "geli",
+    "gele",
+    "mela",
+    "meli",
+    "mele",
+    "nahi",
+    "naahi",
+    "naste",
+    "navhte",
+    "navhta",
     # Common nouns / particles unique to Marathi
-    "aapan", "amhi", "tumhi", "tyanche", "tyani", "tyachya",
-    "aaplyala", "aplya", "aplya", "aplyas",
-    "pण", "pan", "tari", "matra", "kaaran",
-    "ithey", "ithe", "tevha", "tar", "kas", "kay",
+    "aapan",
+    "amhi",
+    "tumhi",
+    "tyanche",
+    "tyani",
+    "tyachya",
+    "aaplyala",
+    "aplya",
+    "aplya",
+    "aplyas",
+    "pण",
+    "pan",
+    "tari",
+    "matra",
+    "kaaran",
+    "ithey",
+    "ithe",
+    "tevha",
+    "tar",
+    "kas",
+    "kay",
     # Unique Marathi words
-    "saangto", "saangte", "baghto", "baghte",
-    "khup", "thoda", "jaast", "kadhi",
-    "marathi", "mumbai", "pune", "nashik",
+    "saangto",
+    "saangte",
+    "baghto",
+    "baghte",
+    "khup",
+    "thoda",
+    "jaast",
+    "kadhi",
+    "marathi",
+    "mumbai",
+    "pune",
+    "nashik",
 }
 
 # ── Script Unicode ranges ─────────────────────────────────────────────────────
@@ -155,7 +248,7 @@ def is_romanized_marathi(text: str) -> bool:
     return len(matching_tokens) >= 2
 
 
-def detect_language_via_gemini(text: str) -> Optional[Tuple[str, float]]:
+def detect_language_via_gemini(text: str) -> Optional[tuple[str, float]]:
     """
     Use Gemini to detect the language of ambiguous text.
     Returns (lang_code, confidence) or None on failure.
@@ -164,9 +257,10 @@ def detect_language_via_gemini(text: str) -> Optional[Tuple[str, float]]:
         return None
     try:
         from google import genai
+
         client = genai.Client(api_key=settings.gemini_api_key)
         prompt = (
-            f'What language is this text written in? Respond with ONLY the ISO 639-1 language code '
+            f"What language is this text written in? Respond with ONLY the ISO 639-1 language code "
             f'(e.g. "hi" for Hindi, "mr" for Marathi, "en" for English, "ta" for Tamil, '
             f'"te" for Telugu, "bn" for Bengali). Text: "{text[:200]}"'
         )
@@ -178,14 +272,16 @@ def detect_language_via_gemini(text: str) -> Optional[Tuple[str, float]]:
             code = response.text.strip().lower().strip('"').split()[0]
             # Validate it's a known code
             if code in ("hi", "mr", "ta", "te", "bn", "en", "gu", "pa", "kn", "ml"):
-                logger.info("Gemini detected language: '%s' for text: '%.40s'", code, text)
+                logger.info(
+                    "Gemini detected language: '%s' for text: '%.40s'", code, text
+                )
                 return code, 0.88
     except Exception as exc:
         logger.debug("Gemini language detection failed: %s", exc)
     return None
 
 
-def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, float]:
+def detect_language(text: str, ft_model: Optional[Any] = None) -> tuple[str, float]:
     """
     Detect the language of the input text.
     Returns (lang_code, confidence).
@@ -229,15 +325,44 @@ def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, flo
                 confidence = float(scores[0]) if len(scores) > 0 else 0.5
                 return top_label, round(confidence, 3)
         except Exception as exc:
-            logger.warning("fastText prediction failed: %s. Falling back to script.", exc)
+            logger.warning(
+                "fastText prediction failed: %s. Falling back to script.", exc
+            )
 
     # Marathi-specific character/word markers that don't appear in Hindi.
     # These are common Marathi grammatical endings and words using Devanagari.
     MARATHI_MARKERS = {
-        "आहे", "आहेत", "केली", "केले", "आहेस", "आपण", "म्हणजे", "म्हणून",
-        "परंतु", "तरी", "मात्र", "असे", "असलेले", "असताना", "त्यांनी",
-        "येथे", "तेव्हा", "नाही", "नव्हते", "होते", "होती", "झाले", "झाली",
-        "होतो", "होती", "झाला", "झाल्या", "असतो", "असते", "कारण", "म्हटले",
+        "आहे",
+        "आहेत",
+        "केली",
+        "केले",
+        "आहेस",
+        "आपण",
+        "म्हणजे",
+        "म्हणून",
+        "परंतु",
+        "तरी",
+        "मात्र",
+        "असे",
+        "असलेले",
+        "असताना",
+        "त्यांनी",
+        "येथे",
+        "तेव्हा",
+        "नाही",
+        "नव्हते",
+        "होते",
+        "होती",
+        "झाले",
+        "झाली",
+        "होतो",
+        "होती",
+        "झाला",
+        "झाल्या",
+        "असतो",
+        "असते",
+        "कारण",
+        "म्हटले",
     }
 
     # 3. Fallback based on predominant script
@@ -247,7 +372,10 @@ def detect_language(text: str, ft_model: Optional[Any] = None) -> Tuple[str, flo
         # Two or more marker hits is strong evidence of Marathi prose.
         marathi_hits = sum(1 for marker in MARATHI_MARKERS if marker in cleaned)
         if marathi_hits >= 2:
-            logger.info("Detected Marathi via Devanagari script + %d Marathi markers.", marathi_hits)
+            logger.info(
+                "Detected Marathi via Devanagari script + %d Marathi markers.",
+                marathi_hits,
+            )
             return "mr", 0.82
         return "hi", 0.75
     elif script == "Bengali":

@@ -5,7 +5,6 @@ Enforces safe downloading, size limits, and length bounds.
 
 from __future__ import annotations
 
-import io
 import logging
 from typing import Any, Optional, TypedDict
 
@@ -93,7 +92,9 @@ def extract_ocr_fallback(doc: Any, reader: Optional[Any] = None) -> str:
         return ""
 
 
-def extract_text_from_pdf_bytes(pdf_bytes: bytes, reader: Optional[Any] = None) -> PDFResult:
+def extract_text_from_pdf_bytes(
+    pdf_bytes: bytes, reader: Optional[Any] = None
+) -> PDFResult:
     """
     Extract text directly from PDF bytes.
     Uses native PyMuPDF text extraction first, falling back to EasyOCR
@@ -121,7 +122,9 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes, reader: Optional[Any] = None) 
                 )
 
             # Fallback to OCR for scanned documents
-            logger.info("PDF has insufficient native text. Attempting OCR fallback on page 1...")
+            logger.info(
+                "PDF has insufficient native text. Attempting OCR fallback on page 1..."
+            )
             ocr_text = extract_ocr_fallback(doc, reader=reader)
             method = "ocr_fallback" if ocr_text else "empty"
             return PDFResult(
@@ -146,4 +149,3 @@ def extract_text_from_pdf(url: str, reader: Optional[Any] = None) -> PDFResult:
         return PDFResult(text="", page_count=0, extraction_method="empty")
 
     return extract_text_from_pdf_bytes(pdf_bytes, reader=reader)
-

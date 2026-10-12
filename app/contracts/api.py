@@ -5,12 +5,14 @@ Strictly decoupled from internal pipeline and DB models.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class CheckRequest(BaseModel):
     """Payload for POST /api/check."""
+
     model_config = ConfigDict(extra="ignore")
     text: Optional[str] = None
     claim: Optional[str] = None
@@ -19,6 +21,7 @@ class CheckRequest(BaseModel):
 
 class EvidenceItemAPI(BaseModel):
     """Public representation of an evidence item."""
+
     model_config = ConfigDict(extra="ignore")
     title: str = ""
     url: str = ""
@@ -38,6 +41,7 @@ class CheckAPIResponse(BaseModel):
     - Evidence Strength: Derived from verified source tiers (Strong, Moderate, Limited, Insufficient).
     - Parity: formatted_reply strictly mirrors WhatsApp webhook message layout.
     """
+
     model_config = ConfigDict(extra="ignore")
     verdict: str
     verdict_label: str = ""
@@ -47,8 +51,8 @@ class CheckAPIResponse(BaseModel):
     explanation: str = ""
     formatted_reply: str = ""
     claim: str = ""
-    claim_results: List[Any] = Field(default_factory=list)
-    evidence: List[Dict[str, Any]] = Field(default_factory=list)
-    flags: List[str] = Field(default_factory=list)
-    timings_ms: Dict[str, float] = Field(default_factory=dict)
+    claim_results: list[Any] = Field(default_factory=list)
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    flags: list[str] = Field(default_factory=list)
+    timings_ms: dict[str, float] = Field(default_factory=dict)
     language: str = "en"

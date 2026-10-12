@@ -33,7 +33,10 @@ def _get_redis_client() -> Optional[object]:
     if settings.cache_backend == "redis" and settings.upstash_redis_url:
         try:
             from upstash_redis import Redis  # type: ignore
-            _redis_client = Redis(url=settings.upstash_redis_url, token=settings.upstash_redis_token)
+
+            _redis_client = Redis(
+                url=settings.upstash_redis_url, token=settings.upstash_redis_token
+            )
             return _redis_client
         except Exception as exc:
             logger.warning("Failed to initialize Redis client: %s", exc)
@@ -65,7 +68,9 @@ def cache_get(text: str) -> Optional[dict]:
                 logger.debug("Redis cache HIT for key=%s", key[:20])
                 return json.loads(val)
         except Exception as exc:
-            logger.warning("Redis cache_get failed (falling through to memory): %s", exc)
+            logger.warning(
+                "Redis cache_get failed (falling through to memory): %s", exc
+            )
 
     result = _memory_cache.get(key)
     if result is not None:
@@ -86,7 +91,9 @@ def cache_set(text: str, value: dict, ttl: int = 86400) -> None:
             logger.debug("Redis cache_set key=%s ttl=%ds", key[:20], ttl)
             return
         except Exception as exc:
-            logger.warning("Redis cache_set failed (falling through to memory): %s", exc)
+            logger.warning(
+                "Redis cache_set failed (falling through to memory): %s", exc
+            )
 
     _memory_cache[key] = value
     logger.debug("Memory cache_set key=%s", key[:20])
@@ -126,4 +133,3 @@ def claim_cache_set(claim_text: str, value: dict, ttl: int = 86400) -> None:
             logger.warning("Redis claim_cache_set failed: %s", exc)
 
     _memory_cache[key] = value
-

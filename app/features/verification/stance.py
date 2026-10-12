@@ -20,23 +20,23 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from app.contracts.models import EvidenceItem
 from app.core.config import settings
 from app.core.constants import Verdict
-from app.features.verification.details import check_detail_conflict, has_negation
+from app.features.verification.details import check_detail_conflict
 
 logger = logging.getLogger(__name__)
 
 # NLI label indices for bart-large-mnli and roberta-large-mnli
-_NLI_LABEL_MAP: Dict[int, str] = {0: "CONTRADICTION", 1: "NEUTRAL", 2: "ENTAILMENT"}
+_NLI_LABEL_MAP: dict[int, str] = {0: "CONTRADICTION", 1: "NEUTRAL", 2: "ENTAILMENT"}
 
 # Module-level model cache to avoid reload on every call
-_nli_model_cache: Dict[str, Tuple[Any, Any]] = {}
+_nli_model_cache: dict[str, tuple[Any, Any]] = {}
 
 
-def _load_nli_model(model_name: str) -> Optional[Tuple[Any, Any]]:
+def _load_nli_model(model_name: str) -> Optional[tuple[Any, Any]]:
     """Lazily load the NLI tokenizer and model, caching after first load."""
     if model_name in _nli_model_cache:
         return _nli_model_cache[model_name]
@@ -52,7 +52,11 @@ def _load_nli_model(model_name: str) -> Optional[Tuple[Any, Any]]:
         logger.info("NLI model loaded: %s", model_name)
         return tokenizer, model
     except Exception as exc:
-        logger.warning("NLI model load failed (%s): %s. Will use lexical fallback.", model_name, exc)
+        logger.warning(
+            "NLI model load failed (%s): %s. Will use lexical fallback.",
+            model_name,
+            exc,
+        )
         return None
 
 
@@ -61,7 +65,7 @@ def _nli_stance(
     hypothesis: str,
     tokenizer: Any,
     model: Any,
-) -> Tuple[str, float]:
+) -> tuple[str, float]:
     """
     Run one NLI inference pass.
     Returns (label, confidence) where label ∈ {'ENTAILMENT','NEUTRAL','CONTRADICTION'}.
@@ -88,11 +92,29 @@ def _nli_stance(
 
 
 _REFUTE_KEYWORDS = {
-    "false", "fake", "myth", "hoax", "debunk", "untrue", "incorrect",
-    "misleading", "disproven", "rumor", "rumour", "no evidence",
-    "baseless", "fabricated", "not true", "refuted", "danger myth",
-    "discredited", "no scientific basis", "no proof", "unfounded",
-    "busted", "pseudoscience"
+    "false",
+    "fake",
+    "myth",
+    "hoax",
+    "debunk",
+    "untrue",
+    "incorrect",
+    "misleading",
+    "disproven",
+    "rumor",
+    "rumour",
+    "no evidence",
+    "baseless",
+    "fabricated",
+    "not true",
+    "refuted",
+    "danger myth",
+    "discredited",
+    "no scientific basis",
+    "no proof",
+    "unfounded",
+    "busted",
+    "pseudoscience",
 }
 
 
@@ -104,13 +126,15 @@ def _has_negated_refute_signal(premise_lower: str) -> bool:
     "NOT a hoax"     → False   "claim is a hoax" → True
     "no evidence"    → False   "confirmed false"  → True
     """
-    _NEGATION_PATTERN = r"\b(not|no|never|deny|denying|debunking the|isn't|aren't|doesn't|don't)\b"
+    _NEGATION_PATTERN = (
+        r"\b(not|no|never|deny|denying|debunking the|isn't|aren't|doesn't|don't)\b"
+    )
 
     for kw in _REFUTE_KEYWORDS:
         if kw not in premise_lower:
             continue
         kw_idx = premise_lower.find(kw)
-        lookbehind_window = premise_lower[max(0, kw_idx - 50): kw_idx]
+        lookbehind_window = premise_lower[max(0, kw_idx - 50) : kw_idx]
         if re.search(_NEGATION_PATTERN, lookbehind_window):
             continue  # negation precedes keyword → skip
         return True  # genuine refute signal
@@ -118,7 +142,7 @@ def _has_negated_refute_signal(premise_lower: str) -> bool:
     return False
 
 
-def _gemini_stance_batch(claim: str, evidence_items: List[EvidenceItem]) -> bool:
+def _gemini_stance_batch(claim: str, evidence_items: list[EvidenceItem]) -> bool:
     """
     Classify the stance of evidence items against the claim in a single Gemini call.
     Annotates evidence_items in-place. Returns True if successful, False otherwise.
@@ -128,6 +152,7 @@ def _gemini_stance_batch(claim: str, evidence_items: List[EvidenceItem]) -> bool
 
     try:
         import json
+
         from google import genai
 
         client = genai.Client(api_key=settings.gemini_api_key)
@@ -137,11 +162,14 @@ def _gemini_stance_batch(claim: str, evidence_items: List[EvidenceItem]) -> bool
             snippet = item.snippet[:320].strip()
             title = item.title[:150].strip()
             domain = item.source_domain
-            items_desc.append(f"[{idx}] Source: {domain} | Title: {title} | Snippet: {snippet}")
+            items_desc.append(
+                f"[{idx}] Source: {domain} | Title: {title} | Snippet: {snippet}"
+            )
 
         evidence_payload = "\n".join(items_desc)
 
         from app.core.redaction import redact_for_external
+
         redacted_claim = redact_for_external(claim)
 
         prompt = f"""You are an expert fact-checking NLI (Natural Language Inference) classifier.
@@ -152,7 +180,7 @@ CLAIM: "{redacted_claim}"
 EVIDENCE ITEMS:
 {evidence_payload}
 
-For each item [0] to [{len(evidence_items)-1}], assign:
+For each item [0] to [{len(evidence_items) - 1}], assign:
 - "stance": "REFUTES" if the snippet disproves, contradicts, debunks the claim or shows it has no factual basis, is a myth/hoax, or states it is false.
 - "stance": "SUPPORTS" if the snippet confirms or proves the claim is factually true.
 - "stance": "NEUTRAL" if the snippet is off-topic, discusses related words without verifying or debunking the specific claim, or is inconclusive.
@@ -197,15 +225,23 @@ Output strictly valid JSON only with NO markdown fences, matching this structure
                 conf = r.get("confidence")
                 if conf is not None:
                     try:
-                        evidence_items[idx].score = round(max(0.2, min(1.0, float(conf))), 3)
+                        evidence_items[idx].score = round(
+                            max(0.2, min(1.0, float(conf))), 3
+                        )
                     except (ValueError, TypeError):
                         pass
 
-        logger.info("Successfully classified %d evidence items via Gemini stance batch.", len(evidence_items))
+        logger.info(
+            "Successfully classified %d evidence items via Gemini stance batch.",
+            len(evidence_items),
+        )
         return True
 
     except Exception as exc:
-        logger.warning("Gemini stance batch classification failed: %s. Using lexical fallback.", exc)
+        logger.warning(
+            "Gemini stance batch classification failed: %s. Using lexical fallback.",
+            exc,
+        )
         return False
 
 
@@ -214,6 +250,7 @@ def _lexical_overlap_score(claim: str, evidence_text: str) -> float:
     Fallback stance heuristic based on keyword overlap between claim and evidence.
     Returns a score in [0, 1].
     """
+
     def tokenize(text: str) -> set:
         return set(re.findall(r"\b\w{3,}\b", text.lower()))
 
@@ -227,8 +264,8 @@ def _lexical_overlap_score(claim: str, evidence_text: str) -> float:
 
 def score_stance(
     claim: str,
-    evidence_items: List[EvidenceItem],
-) -> List[EvidenceItem]:
+    evidence_items: list[EvidenceItem],
+) -> list[EvidenceItem]:
     """
     Score and annotate each EvidenceItem with a stance label and updated score.
 
@@ -266,6 +303,7 @@ def score_stance(
 
     def _apply_recency_weight(item: EvidenceItem) -> None:
         from datetime import date, datetime
+
         today = date.today()
         if getattr(item, "publish_date", None):
             try:
@@ -309,7 +347,7 @@ def score_stance(
 
         genuine_refute_signal = _has_negated_refute_signal(premise_lower)
 
-        if genuine_refute_signal and overlap > 0.20:   # raised from 0.15
+        if genuine_refute_signal and overlap > 0.20:  # raised from 0.15
             item.stance = "REFUTES"
             item.score = round(min(0.90, max(0.60, overlap + 0.3)), 3)
         elif overlap > 0.50:
@@ -325,8 +363,8 @@ def score_stance(
 
 def aggregate_verdict(
     claim: str,
-    evidence_items: List[EvidenceItem],
-) -> Tuple[Verdict, float, str]:
+    evidence_items: list[EvidenceItem],
+) -> tuple[Verdict, float, str]:
     """
     Aggregate per-item stances into a single Verdict with confidence and reason code.
 
@@ -362,7 +400,7 @@ def aggregate_verdict(
         return Verdict.UNVERIFIABLE, 0.0, "NO_EVIDENCE"
 
     # Partition: decisive candidates vs context-only
-    decisive: List[EvidenceItem] = []
+    decisive: list[EvidenceItem] = []
     for item in evidence_items:
         if getattr(item, "reason", None) in _NON_DECISIVE_REASONS:
             continue  # context only — excluded from verdict
@@ -374,31 +412,63 @@ def aggregate_verdict(
         if item.tier == Tier.TIER_2_GOV_PIB:
             combined_text = f"{item.title} {item.snippet}".lower()
             withdrawal_kws = [
-                "withdrawn", "discontinued", "replaced", "no longer valid",
-                "expired", "cancelled", "repealed", "revoked",
+                "withdrawn",
+                "discontinued",
+                "replaced",
+                "no longer valid",
+                "expired",
+                "cancelled",
+                "repealed",
+                "revoked",
             ]
-            if any(re.search(r"\b" + re.escape(kw) + r"\b", combined_text) for kw in withdrawal_kws):
+            if any(
+                re.search(r"\b" + re.escape(kw) + r"\b", combined_text)
+                for kw in withdrawal_kws
+            ):
                 claim_words = set(re.findall(r"\w{3,}", claim.lower()))
-                stopwords = {"the", "and", "for", "with", "that", "this", "from", "have", "been", "has", "are", "was"}
+                stopwords = {
+                    "the",
+                    "and",
+                    "for",
+                    "with",
+                    "that",
+                    "this",
+                    "from",
+                    "have",
+                    "been",
+                    "has",
+                    "are",
+                    "was",
+                }
                 relevant_words = claim_words - stopwords
                 text_words = set(re.findall(r"\w{3,}", combined_text))
-                if not relevant_words or (relevant_words & text_words) or item.score >= 0.3:
+                if (
+                    not relevant_words
+                    or (relevant_words & text_words)
+                    or item.score >= 0.3
+                ):
                     conf = round(min((item.score or 0.7) + 0.2, 1.0), 3)
                     return Verdict.OUTDATED, conf, "OFFICIAL_NOTICE_WITHDRAWN"
 
     # Outdated authoritative fact check:
     tier12_outdated = [
-        i for i in decisive
+        i
+        for i in decisive
         if i.tier in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB)
         and i.rating == Rating.OUTDATED
     ]
     if tier12_outdated:
         best = max(tier12_outdated, key=lambda i: i.score)
-        return Verdict.OUTDATED, round(min(best.score + 0.3, 1.0), 3), "AUTHORITATIVE_FACT_CHECK"
+        return (
+            Verdict.OUTDATED,
+            round(min(best.score + 0.3, 1.0), 3),
+            "AUTHORITATIVE_FACT_CHECK",
+        )
 
     def _is_tier2_detail_valid(item: EvidenceItem) -> bool:
         if item.tier == Tier.TIER_2_GOV_PIB:
             from app.features.retrieval.official_search import passes_detail_check
+
             return passes_detail_check(claim, f"{item.title} {item.snippet}")
         return True
 
@@ -407,10 +477,12 @@ def aggregate_verdict(
     # BUG-B.2: Require corroboration OR publish_date no older than 18 months
     # -----------------------------------------------------------------------
     from datetime import date, datetime
+
     today = date.today()
 
     tier12_false = [
-        i for i in decisive
+        i
+        for i in decisive
         if i.tier in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB)
         and i.rating in (Rating.FALSE, Rating.MISLEADING)
         and i.stance != "NEUTRAL"
@@ -419,26 +491,46 @@ def aggregate_verdict(
     if tier12_false:
         best = max(tier12_false, key=lambda i: i.score)
         # Check corroboration (at least 2 items supporting REFUTES)
-        has_corroboration = len([i for i in decisive if i.stance == "REFUTES" and i.tier in _DECISIVE_TIERS]) >= 2
+        has_corroboration = (
+            len(
+                [
+                    i
+                    for i in decisive
+                    if i.stance == "REFUTES" and i.tier in _DECISIVE_TIERS
+                ]
+            )
+            >= 2
+        )
         is_fresh = False
         if best.publish_date:
             try:
-                pub_d = datetime.strptime(str(best.publish_date)[:10], "%Y-%m-%d").date()
+                pub_d = datetime.strptime(
+                    str(best.publish_date)[:10], "%Y-%m-%d"
+                ).date()
                 if (today - pub_d).days / 30.44 <= 18:
                     is_fresh = True
             except Exception:
                 is_fresh = False
 
         if not has_corroboration and not is_fresh:
-            return Verdict.UNVERIFIABLE, round(min(best.score, 1.0), 3), "SINGLE_STALE_SOURCE"
+            return (
+                Verdict.UNVERIFIABLE,
+                round(min(best.score, 1.0), 3),
+                "SINGLE_STALE_SOURCE",
+            )
 
-        return Verdict.REFUTED, round(min(best.score, 1.0), 3), "AUTHORITATIVE_FACT_CHECK"
+        return (
+            Verdict.REFUTED,
+            round(min(best.score, 1.0), 3),
+            "AUTHORITATIVE_FACT_CHECK",
+        )
 
     # -----------------------------------------------------------------------
     # Rule 2b: SUPPORTED — authoritative TRUE rating that passed gate
     # -----------------------------------------------------------------------
     tier12_true = [
-        i for i in decisive
+        i
+        for i in decisive
         if i.tier in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB)
         and i.rating == Rating.TRUE
         and i.stance != "NEUTRAL"
@@ -446,45 +538,61 @@ def aggregate_verdict(
     ]
     if tier12_true:
         best = max(tier12_true, key=lambda i: i.score)
-        return Verdict.SUPPORTED, round(min(best.score, 1.0), 3), "AUTHORITATIVE_FACT_CHECK"
+        return (
+            Verdict.SUPPORTED,
+            round(min(best.score, 1.0), 3),
+            "AUTHORITATIVE_FACT_CHECK",
+        )
 
     # -----------------------------------------------------------------------
     # Rule 2c: PARTLY_TRUE → PARTIALLY_SUPPORTED (authoritative)
     # -----------------------------------------------------------------------
     tier12_partly = [
-        i for i in decisive
+        i
+        for i in decisive
         if i.tier in (Tier.TIER_1_IFCN, Tier.TIER_2_GOV_PIB)
         and i.rating == Rating.PARTLY_TRUE
         and _is_tier2_detail_valid(i)
     ]
     if tier12_partly:
         best = max(tier12_partly, key=lambda i: i.score)
-        return Verdict.PARTIALLY_SUPPORTED, round(min(best.score, 1.0), 3), "AUTHORITATIVE_FACT_CHECK"
+        return (
+            Verdict.PARTIALLY_SUPPORTED,
+            round(min(best.score, 1.0), 3),
+            "AUTHORITATIVE_FACT_CHECK",
+        )
 
     # -----------------------------------------------------------------------
     # Rule 2d: Conflicting policy evidence → PARTIALLY_SUPPORTED (BUG-B.3)
     # If decisive items have BOTH REFUTES and SUPPORTS stances from the same
     # domain or government sources with > 18 months age difference
     # -----------------------------------------------------------------------
-    decisive_t123 = [i for i in decisive if i.tier in _DECISIVE_TIERS and _is_tier2_detail_valid(i)]
+    decisive_t123 = [
+        i for i in decisive if i.tier in _DECISIVE_TIERS and _is_tier2_detail_valid(i)
+    ]
     supports_t123 = [i for i in decisive_t123 if i.stance == "SUPPORTS"]
     refutes_t123 = [i for i in decisive_t123 if i.stance == "REFUTES"]
 
     if supports_t123 and refutes_t123:
         # Check if SUPPORTS and REFUTES come from same domain or government domains with date difference > 18 months
         conflicting_policy = False
-        max_conf = max(max(s.score for s in supports_t123), max(r.score for r in refutes_t123))
+        max_conf = max(
+            max(s.score for s in supports_t123), max(r.score for r in refutes_t123)
+        )
 
         for s in supports_t123:
             for r in refutes_t123:
                 same_or_gov = (
-                    (s.source_domain and s.source_domain == r.source_domain)
-                    or (s.tier == Tier.TIER_2_GOV_PIB and r.tier == Tier.TIER_2_GOV_PIB)
-                )
+                    s.source_domain and s.source_domain == r.source_domain
+                ) or (s.tier == Tier.TIER_2_GOV_PIB and r.tier == Tier.TIER_2_GOV_PIB)
                 if same_or_gov and s.publish_date and r.publish_date:
                     try:
-                        s_dt = datetime.strptime(str(s.publish_date)[:10], "%Y-%m-%d").date()
-                        r_dt = datetime.strptime(str(r.publish_date)[:10], "%Y-%m-%d").date()
+                        s_dt = datetime.strptime(
+                            str(s.publish_date)[:10], "%Y-%m-%d"
+                        ).date()
+                        r_dt = datetime.strptime(
+                            str(r.publish_date)[:10], "%Y-%m-%d"
+                        ).date()
                         diff_months = abs((s_dt - r_dt).days) / 30.44
                         if diff_months > 18:
                             conflicting_policy = True
@@ -495,7 +603,11 @@ def aggregate_verdict(
                 break
 
         if conflicting_policy:
-            return Verdict.PARTIALLY_SUPPORTED, round(min(max_conf, 1.0), 3), "CONFLICTING_POLICY_EVIDENCE"
+            return (
+                Verdict.PARTIALLY_SUPPORTED,
+                round(min(max_conf, 1.0), 3),
+                "CONFLICTING_POLICY_EVIDENCE",
+            )
 
     # -----------------------------------------------------------------------
     # From here on: only stance-based evaluation of decisive Tier-1/2/3 items
@@ -521,7 +633,9 @@ def aggregate_verdict(
     # -----------------------------------------------------------------------
     # Rule 5: Tier-4/5 only evidence is NEVER decisive
     # -----------------------------------------------------------------------
-    has_only_weak = all(i.tier not in _DECISIVE_TIERS for i in decisive) if decisive else True
+    has_only_weak = (
+        all(i.tier not in _DECISIVE_TIERS for i in decisive) if decisive else True
+    )
     if has_only_weak:
         return Verdict.UNVERIFIABLE, 0.0, "INSUFFICIENT_TIER"
 
@@ -529,4 +643,3 @@ def aggregate_verdict(
     # Default: insufficient decisive evidence
     # -----------------------------------------------------------------------
     return Verdict.UNVERIFIABLE, 0.0, "INCONCLUSIVE"
-

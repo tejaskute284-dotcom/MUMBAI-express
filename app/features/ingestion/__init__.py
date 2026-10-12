@@ -1,4 +1,4 @@
-﻿"""
+"""
 Ingestion feature package for MUMBAI express.
 
 Exposes a unified `ingest()` entrypoint that dispatches to modality-specific extractors:

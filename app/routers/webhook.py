@@ -18,25 +18,23 @@ Architectural Rationale & Failure Mode Defenses:
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import hmac
-import logging
 import threading
 import time
 import uuid
 from collections import defaultdict
 from threading import Lock
-from typing import Any, Dict
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 
 from app.contracts.models import IngestedMessage, WebhookPayload
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.core.twiml import twiml_message as _twiml_message_fn
 from app.core.twilio_client import send_twilio_message
+from app.core.twiml import twiml_message as _twiml_message_fn
 from app.features.ingestion.service import ingest
 from app.pipeline import run_pipeline
 
@@ -46,11 +44,11 @@ router = APIRouter(prefix="/webhook", tags=["webhook"])
 
 # ── In-memory rate limiter (per hashed sender, per minute) ─────────────────────
 
-_rate_store: Dict[str, list] = defaultdict(list)
+_rate_store: dict[str, list] = defaultdict(list)
 _rate_lock = Lock()
 
 # ── In-memory deduplication store (per MessageSid, 10 min TTL) ────────────────
-_processed_sids: Dict[str, float] = {}
+_processed_sids: dict[str, float] = {}
 _sids_lock = Lock()
 
 
@@ -62,16 +60,21 @@ def clear_processed_sids() -> None:
 
 def _start_sid_cleanup_daemon() -> None:
     """LOOPHOLE-03: Periodically purge expired entries from _processed_sids."""
+
     def _cleanup_loop() -> None:
         while True:
             time.sleep(300)  # every 5 minutes
             now = time.monotonic()
             with _sids_lock:
-                expired = [k for k, ts in list(_processed_sids.items()) if now - ts > 600]
+                expired = [
+                    k for k, ts in list(_processed_sids.items()) if now - ts > 600
+                ]
                 for k in expired:
                     del _processed_sids[k]
             if expired:
-                logger.debug("SID cache cleanup: removed %d expired entries", len(expired))
+                logger.debug(
+                    "SID cache cleanup: removed %d expired entries", len(expired)
+                )
 
     t = threading.Thread(target=_cleanup_loop, daemon=True, name="sid-cache-cleanup")
     t.start()
@@ -123,7 +126,10 @@ def _is_rate_limited(sender_hash: str) -> bool:
     window = getattr(settings, "webhook_rate_window_seconds", RATE_WINDOW_SECONDS)
     # Allow tests that monkeypatch rate_limit_per_minute to take precedence
     configured_limit = getattr(settings, "webhook_rate_limit_per_window", 10)
-    if hasattr(settings, "rate_limit_per_minute") and settings.rate_limit_per_minute != 10:
+    if (
+        hasattr(settings, "rate_limit_per_minute")
+        and settings.rate_limit_per_minute != 10
+    ):
         limit = settings.rate_limit_per_minute
     else:
         limit = configured_limit
@@ -139,6 +145,7 @@ def _is_rate_limited(sender_hash: str) -> bool:
 
 # ── Twilio signature dependency ────────────────────────────────────────────────
 
+
 async def _validate_twilio_signature(request: Request) -> None:
     """
     FastAPI dependency — validates Twilio X-Twilio-Signature header.
@@ -150,7 +157,7 @@ async def _validate_twilio_signature(request: Request) -> None:
     from twilio.request_validator import RequestValidator
 
     signature = request.headers.get("X-Twilio-Signature", "")
-    form_data: Dict[str, Any] = dict(await request.form())
+    form_data: dict[str, Any] = dict(await request.form())
     url = str(request.url)
 
     validator = RequestValidator(settings.twilio_auth_token)
@@ -162,6 +169,7 @@ async def _validate_twilio_signature(request: Request) -> None:
 
 
 # ── Webhook handler ────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/twilio",
@@ -187,7 +195,9 @@ async def twilio_webhook(
         form_data = dict(await request.form())
         payload = WebhookPayload(**form_data)
     except Exception as exc:
-        logger.warning("[%s] Malformed webhook payload: %s", request_id, type(exc).__name__)
+        logger.warning(
+            "[%s] Malformed webhook payload: %s", request_id, type(exc).__name__
+        )
         return _twiml_error("Could not parse your message. Please try again.")
 
     sender_hash = _hash_sender(payload.From)
@@ -202,7 +212,11 @@ async def twilio_webhook(
 
     # ── Deduplication ──────────────────────────────────────────────────────────
     if payload.MessageSid and _is_duplicate_message(payload.MessageSid):
-        logger.warning("[%s] Duplicate MessageSid=%s received. Dropping duplicate pipeline run.", request_id, payload.MessageSid)
+        logger.warning(
+            "[%s] Duplicate MessageSid=%s received. Dropping duplicate pipeline run.",
+            request_id,
+            payload.MessageSid,
+        )
         return PlainTextResponse(
             content=_twiml_message_fn("Your message is already being processed."),
             status_code=200,
@@ -211,7 +225,9 @@ async def twilio_webhook(
 
     # ── Rate limiting ──────────────────────────────────────────────────────────
     if _is_rate_limited(sender_hash):
-        logger.warning("[%s] Rate limit exceeded for sender=%s…", request_id, sender_hash)
+        logger.warning(
+            "[%s] Rate limit exceeded for sender=%s…", request_id, sender_hash
+        )
         # BUG-13: must return HTTP 200 — Twilio retries on any non-200 response
         return PlainTextResponse(
             content=_twiml_message_fn(
@@ -239,7 +255,9 @@ async def twilio_webhook(
     ack_message = "Checking this, one moment..."
 
     # ── Step 2: Offload pipeline to non-blocking background task ──────────────
-    def _execute_pipeline_and_reply(ingested_msg: IngestedMessage, to_number: str, req_id: str) -> None:
+    def _execute_pipeline_and_reply(
+        ingested_msg: IngestedMessage, to_number: str, req_id: str
+    ) -> None:
         try:
             response = run_pipeline(ingested_msg)
             reply = response.formatted_reply or "Sorry, I could not generate a reply."
@@ -251,7 +269,9 @@ async def twilio_webhook(
             )
             send_twilio_message(to_number, reply)
         except Exception as exc:
-            logger.error("[%s] Background pipeline error: %s", req_id, exc, exc_info=True)
+            logger.error(
+                "[%s] Background pipeline error: %s", req_id, exc, exc_info=True
+            )
             send_twilio_message(
                 to_number,
                 "⚠️ Something went wrong while fact-checking. Please try again.",
@@ -272,6 +292,7 @@ async def twilio_webhook(
 
 
 # ── TwiML helpers ──────────────────────────────────────────────────────────────
+
 
 def _twiml_error(message: str) -> PlainTextResponse:
     """Return a safe TwiML error response."""

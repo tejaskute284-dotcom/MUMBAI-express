@@ -91,7 +91,9 @@ def ingest(
             metadata["url_method"] = url_result["extraction_method"]
 
     except Exception as exc:
-        logger.error("Ingestion failed unexpectedly for %s: %s", input_type, exc, exc_info=True)
+        logger.error(
+            "Ingestion failed unexpectedly for %s: %s", input_type, exc, exc_info=True
+        )
         raw_text = ""
 
     return IngestedMessage(

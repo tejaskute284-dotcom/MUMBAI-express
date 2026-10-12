@@ -19,21 +19,23 @@ import os
 import re
 import threading
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Optional
+
 import yaml
+from pydantic import BaseModel
 
 from app.core.constants import Verdict
 from app.features.verification.details import check_detail_conflict
 
 logger = logging.getLogger(__name__)
 
-_CLAIM_BANK_CACHE: Optional[List[Dict[str, Any]]] = None
+_CLAIM_BANK_CACHE: Optional[list[dict[str, Any]]] = None
 _claim_bank_lock = threading.Lock()  # BUG-10: guard against concurrent first-load race
 
 
 class ClaimBankMatch(BaseModel):
     """Result of matching a claim against the verified claim bank."""
+
     claim_id: str
     canonical_claim: str
     verdict: Verdict
@@ -54,7 +56,9 @@ def get_claim_bank_path() -> str:
     return os.path.join(base_dir, "data", "claim_bank.yaml")
 
 
-def validate_claim_bank_entry(entry: Dict[str, Any], today: Optional[date] = None) -> bool:
+def validate_claim_bank_entry(
+    entry: dict[str, Any], today: Optional[date] = None
+) -> bool:
     """
     Validate that a claim bank entry satisfies quality and truthfulness policies:
     1. Must have a canonical_claim.
@@ -64,26 +68,38 @@ def validate_claim_bank_entry(entry: Dict[str, Any], today: Optional[date] = Non
     if not isinstance(entry, dict):
         return False
     if not entry.get("canonical_claim", "").strip():
-        logger.warning("Claim bank entry rejected: missing canonical_claim (%s)", entry.get("id"))
+        logger.warning(
+            "Claim bank entry rejected: missing canonical_claim (%s)", entry.get("id")
+        )
         return False
 
     review_by_str = entry.get("review_by")
     if not review_by_str:
-        logger.warning("Claim bank entry %s rejected: missing review_by date", entry.get("id"))
+        logger.warning(
+            "Claim bank entry %s rejected: missing review_by date", entry.get("id")
+        )
         return False
     try:
         review_by_date = datetime.strptime(str(review_by_str), "%Y-%m-%d").date()
         current_date = today or date.today()
         if review_by_date < current_date:
-            logger.warning("Claim bank entry %s rejected: expired on %s", entry.get("id"), review_by_date)
+            logger.warning(
+                "Claim bank entry %s rejected: expired on %s",
+                entry.get("id"),
+                review_by_date,
+            )
             return False
     except Exception:
-        logger.warning("Claim bank entry %s rejected: invalid review_by format", entry.get("id"))
+        logger.warning(
+            "Claim bank entry %s rejected: invalid review_by format", entry.get("id")
+        )
         return False
 
     sources = entry.get("sources")
     if not sources or not isinstance(sources, list):
-        logger.warning("Claim bank entry %s rejected: missing sources list", entry.get("id"))
+        logger.warning(
+            "Claim bank entry %s rejected: missing sources list", entry.get("id")
+        )
         return False
 
     has_valid_source = False
@@ -92,16 +108,21 @@ def validate_claim_bank_entry(entry: Dict[str, Any], today: Optional[date] = Non
             has_valid_source = True
             break
     if not has_valid_source:
-        logger.warning("Claim bank entry %s rejected: no source has valid url and publisher", entry.get("id"))
+        logger.warning(
+            "Claim bank entry %s rejected: no source has valid url and publisher",
+            entry.get("id"),
+        )
         return False
 
     return True
 
 
-def load_claim_bank(force_reload: bool = False) -> List[Dict[str, Any]]:
+def load_claim_bank(force_reload: bool = False) -> list[dict[str, Any]]:
     """Load entries from data/claim_bank.yaml. Thread-safe via _claim_bank_lock."""
     global _CLAIM_BANK_CACHE
-    with _claim_bank_lock:  # BUG-10: prevents double-write race on concurrent cold starts
+    with (
+        _claim_bank_lock
+    ):  # BUG-10: prevents double-write race on concurrent cold starts
         if _CLAIM_BANK_CACHE is not None and not force_reload:
             return _CLAIM_BANK_CACHE
 
@@ -115,8 +136,7 @@ def load_claim_bank(force_reload: bool = False) -> List[Dict[str, Any]]:
             with open(bank_path, "r", encoding="utf-8") as f:
                 raw_data = yaml.safe_load(f) or []
                 _CLAIM_BANK_CACHE = [
-                    entry for entry in raw_data
-                    if validate_claim_bank_entry(entry)
+                    entry for entry in raw_data if validate_claim_bank_entry(entry)
                 ]
                 return _CLAIM_BANK_CACHE
         except Exception as exc:
@@ -128,10 +148,52 @@ def load_claim_bank(force_reload: bool = False) -> List[Dict[str, Any]]:
 def _tokenize(text: str) -> set[str]:
     """Tokenize text into lowercase alpha words, excluding conversational and grammatical stopwords."""
     stopwords = {
-        "the", "a", "an", "is", "are", "in", "on", "of", "to", "and", "or", "for", "with",
-        "causes", "issue", "issues", "there", "that", "this", "us", "we", "all", "our",
-        "only", "him", "her", "he", "she", "it", "they", "them", "from", "at", "by", "be",
-        "was", "were", "been", "has", "have", "had", "do", "does", "did", "bad", "news",
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "in",
+        "on",
+        "of",
+        "to",
+        "and",
+        "or",
+        "for",
+        "with",
+        "causes",
+        "issue",
+        "issues",
+        "there",
+        "that",
+        "this",
+        "us",
+        "we",
+        "all",
+        "our",
+        "only",
+        "him",
+        "her",
+        "he",
+        "she",
+        "it",
+        "they",
+        "them",
+        "from",
+        "at",
+        "by",
+        "be",
+        "was",
+        "were",
+        "been",
+        "has",
+        "have",
+        "had",
+        "do",
+        "does",
+        "did",
+        "bad",
+        "news",
     }
     words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", text.lower())
     return {w for w in words if w not in stopwords}
@@ -162,9 +224,13 @@ def lookup_claim_bank(claim: str, min_overlap: float = 0.5) -> Optional[ClaimBan
         review_by_str = entry.get("review_by")
         if review_by_str:
             try:
-                review_by_date = datetime.strptime(str(review_by_str), "%Y-%m-%d").date()
+                review_by_date = datetime.strptime(
+                    str(review_by_str), "%Y-%m-%d"
+                ).date()
                 if review_by_date < today:
-                    logger.debug("Skipping expired claim bank entry: %s", entry.get("id"))
+                    logger.debug(
+                        "Skipping expired claim bank entry: %s", entry.get("id")
+                    )
                     continue
             except Exception:
                 pass
@@ -192,7 +258,11 @@ def lookup_claim_bank(claim: str, min_overlap: float = 0.5) -> Optional[ClaimBan
                 conflict = check_detail_conflict(claim, canonical)
                 if conflict is not None:
                     # Key detail mismatch (e.g. east vs north) -> cannot be decisive
-                    logger.info("Claim bank candidate '%s' rejected due to detail conflict '%s'", canonical, conflict)
+                    logger.info(
+                        "Claim bank candidate '%s' rejected due to detail conflict '%s'",
+                        canonical,
+                        conflict,
+                    )
                     continue
 
                 sources = entry.get("sources", [])

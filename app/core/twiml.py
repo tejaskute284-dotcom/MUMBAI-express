@@ -14,11 +14,7 @@ def twiml_message(body: str) -> str:
     Escapes XML special characters (&, <, >) to prevent malformed XML
     and Twilio parser rejection (Error 11200).
     """
-    escaped = (
-        body.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-    )
+    escaped = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         f"<Response><Message>{escaped}</Message></Response>"

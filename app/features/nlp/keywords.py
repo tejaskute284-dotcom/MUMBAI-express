@@ -17,7 +17,7 @@ Design notes
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def extract_keywords(
     text: str,
     model: Optional[Any] = None,
     top_n: int = 3,
-) -> List[str]:
+) -> list[str]:
     """
     Extract top keyphrases from English text using KeyBERT.
     Returns a list of keyword strings. Never raises exceptions.
@@ -96,7 +96,9 @@ def extract_keywords(
         )
         # KeyBERT returns [(phrase, score), ...]; we discard scores here because
         # downstream ranking uses separate TF-IDF / BM25 signals.
-        return [kw[0] for kw in keywords if isinstance(kw, (tuple, list)) and len(kw) > 0]
+        return [
+            kw[0] for kw in keywords if isinstance(kw, (tuple, list)) and len(kw) > 0
+        ]
     except Exception as exc:
         logger.warning("Keyword extraction failed: %s", exc)
         return []

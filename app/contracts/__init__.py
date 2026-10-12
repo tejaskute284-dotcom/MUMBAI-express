@@ -1,4 +1,4 @@
-﻿"""
+"""
 Contracts package — Pydantic data models and API schemas for MUMBAI express.
 
 Provides the single source of truth for all inter-layer data shapes:

@@ -18,7 +18,8 @@ Implementors
   WikipediaRetriever        — Wikipedia article summaries
 """
 
-from typing import List, Protocol
+from typing import Protocol
+
 from app.contracts.models import EvidenceItem
 
 
@@ -31,7 +32,7 @@ class Retriever(Protocol):
     Retriever instances without knowing their concrete types.
     """
 
-    def retrieve(self, query: str) -> List[EvidenceItem]:
+    def retrieve(self, query: str) -> list[EvidenceItem]:
         """
         Retrieve evidence items matching the given query.
 

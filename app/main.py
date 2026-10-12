@@ -13,7 +13,6 @@ and app_main.py are thin shims that re-export the app object.
 
 from __future__ import annotations
 
-import os
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -38,6 +37,7 @@ logger = get_logger(__name__)
 # Coordinates graceful subsystem initialization, preheats core language & stance
 # inference models if enabled, and establishes local SQLite persistence handles.
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
@@ -61,6 +61,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # OCR (EasyOCR) — non-fatal
     try:
         from app.features.ingestion.ocr import load_ocr_reader
+
         app.state.ocr_reader = load_ocr_reader()
         model_status["ocr"] = "ok"
         logger.info("[OK] EasyOCR reader loaded")
@@ -72,6 +73,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ASR (Whisper) — non-fatal
     try:
         from app.features.ingestion.asr import load_whisper_model
+
         app.state.whisper_model = load_whisper_model()
         model_status["asr"] = "ok"
         logger.info("[OK] Whisper model '%s' loaded", settings.whisper_model_size)
@@ -83,6 +85,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # NLI model — non-fatal
     try:
         from app.features.verification.stance import _load_nli_model
+
         app.state.nli_model = _load_nli_model(settings.nli_model_name)
         model_status["nli"] = "ok"
         logger.info("[OK] NLI model '%s' loaded", settings.nli_model_name)
@@ -93,10 +96,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # fastText LID model — non-fatal
     import os
+
     try:
         import fasttext  # type: ignore
+
         from app.features.nlp.language import set_ft_model
-        lid_path = "models/lid.176.bin" if os.path.exists("models/lid.176.bin") else "lid.176.bin"
+
+        lid_path = (
+            "models/lid.176.bin"
+            if os.path.exists("models/lid.176.bin")
+            else "lid.176.bin"
+        )
         if os.path.exists(lid_path):
             ft_inst = fasttext.load_model(lid_path)
             app.state.ft_model = ft_inst
@@ -104,17 +114,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             model_status["fasttext_lid"] = "ok"
             logger.info("[OK] fastText LID model loaded from %s", lid_path)
         else:
-            logger.warning("[WARN] fastText LID model not found; using heuristic detection")
+            logger.warning(
+                "[WARN] fastText LID model not found; using heuristic detection"
+            )
             app.state.ft_model = None
             model_status["fasttext_lid"] = "not_found"
     except Exception as exc:
-        logger.warning("[WARN] fastText not available (%s); using heuristic detection", exc)
+        logger.warning(
+            "[WARN] fastText not available (%s); using heuristic detection", exc
+        )
         app.state.ft_model = None
         model_status["fasttext_lid"] = f"unavailable: {type(exc).__name__}"
 
     # Claims SQLite DB — non-fatal
     try:
         from app.db.claims_db import init_db
+
         init_db()
         logger.info("[OK] Claims SQLite database initialized")
     except Exception as exc:
@@ -159,6 +174,7 @@ IP_RATE_WINDOW_SECONDS = getattr(settings, "ip_rate_window_seconds", 60)
 
 # ── Application factory ───────────────────────────────────────────────────────
 
+
 def create_app() -> FastAPI:
     """Build and return the configured FastAPI application."""
 
@@ -175,14 +191,16 @@ def create_app() -> FastAPI:
     )
 
     # ── CORS ─────────────────────────────────────────────────────────────────
-    _allowed_origins = list({
-        settings.frontend_url,
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-    })
+    _allowed_origins = list(
+        {
+            settings.frontend_url,
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+        }
+    )
 
     _app.add_middleware(
         CORSMiddleware,
@@ -236,7 +254,9 @@ def create_app() -> FastAPI:
 
     # ── Global error handler ─────────────────────────────────────────────────
     @_app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def global_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         """Catch-all: returns safe JSON without stack trace."""
         logger.error(
             "Unhandled exception %s %s: %s",
@@ -265,10 +285,10 @@ def create_app() -> FastAPI:
         _app.mount("/web", StaticFiles(directory=str(web_path)), name="web")
 
     # ── Router registration ──────────────────────────────────────────────────
-    from app.routers.check import router as check_router      # noqa: E402
-    from app.routers.health import router as health_router    # noqa: E402
-    from app.routers.webhook import router as webhook_router  # noqa: E402
-    from app.routers.admin import router as admin_router      # noqa: E402
+    from app.routers.admin import router as admin_router
+    from app.routers.check import router as check_router
+    from app.routers.health import router as health_router
+    from app.routers.webhook import router as webhook_router
 
     _app.include_router(health_router)
     _app.include_router(webhook_router)

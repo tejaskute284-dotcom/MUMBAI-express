@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 import yaml
 
 from app.contracts.models import CheckResponse, ClaimResult
@@ -23,10 +24,10 @@ logger = logging.getLogger(__name__)
 
 # ── Labels Cache (from config/labels.yaml) ────────────────────────────────────
 
-_LABELS_CACHE: Dict[str, Any] = {}
+_LABELS_CACHE: dict[str, Any] = {}
 
 
-def _load_labels() -> Dict[str, Any]:
+def _load_labels() -> dict[str, Any]:
     """Load config/labels.yaml into memory with caching."""
     global _LABELS_CACHE
     if not _LABELS_CACHE:
@@ -78,11 +79,11 @@ VERDICT_LABEL: dict = {
     Verdict.UNVERIFIABLE: "UNVERIFIABLE",
 }
 
-MAX_REPLY_LEN = 3000          # Raised from 1400 — allows detailed explanations
-WHATSAPP_HARD_CAP = 4096      # Hard WhatsApp limit
+MAX_REPLY_LEN = 3000  # Raised from 1400 — allows detailed explanations
+WHATSAPP_HARD_CAP = 4096  # Hard WhatsApp limit
 
 
-def compute_evidence_strength(evidence: List[Any]) -> tuple[str, str]:
+def compute_evidence_strength(evidence: list[Any]) -> tuple[str, str]:
     """
     Computes (strength_label, detail_str) based on evidence tiers and count.
 
@@ -131,7 +132,9 @@ def compute_evidence_strength(evidence: List[Any]) -> tuple[str, str]:
         return "Insufficient", "No decisive sources found"
 
 
-def _format_single_claim(result: ClaimResult, idx: int, total: int, lang: str = "en") -> str:
+def _format_single_claim(
+    result: ClaimResult, idx: int, total: int, lang: str = "en"
+) -> str:
     """Format one ClaimResult as a readable block using fixed labels."""
     emoji = VERDICT_EMOJI.get(result.verdict, "❓")
     label = get_verdict_label(result.verdict, lang)
@@ -143,14 +146,16 @@ def _format_single_claim(result: ClaimResult, idx: int, total: int, lang: str = 
     strength_line = f"{ev_strength_prefix}: {strength_label} · {strength_detail}"
 
     # Pick the top evidence items as source cites
-    sources: List[str] = []
+    sources: list[str] = []
     if result.evidence:
         top = sorted(result.evidence, key=lambda e: -e.score)
         for ev in top[:2]:
             if ev.url and ev.source_domain:
                 sources.append(f"• {ev.source_domain}: {ev.url[:80]}")
 
-    source_block = "\n".join(sources) if sources else f"• {get_ui_string('sources', lang)}: N/A"
+    source_block = (
+        "\n".join(sources) if sources else f"• {get_ui_string('sources', lang)}: N/A"
+    )
 
     parts = [header, verdict_line, strength_line, source_block]
     return "\n".join(parts)
@@ -167,8 +172,8 @@ def translate_explanation_paragraph(text: str, target_lang: str) -> str:
     # 1. Try Gemini with retry+backoff
     if settings.gemini_api_key:
         try:
-            from app.core.redaction import redact_for_external
             from app.core.gemini_client import call_gemini
+            from app.core.redaction import redact_for_external
 
             prompt = (
                 f"Translate the following fact-check explanation into language '{target_lang}'. "
@@ -179,13 +184,17 @@ def translate_explanation_paragraph(text: str, target_lang: str) -> str:
             if result:
                 return result
         except Exception as exc:
-            logger.warning("Explanation paragraph translation via Gemini failed for '%s': %s", target_lang, exc)
+            logger.warning(
+                "Explanation paragraph translation via Gemini failed for '%s': %s",
+                target_lang,
+                exc,
+            )
 
     # 2. Online Translation Gateway Fallback
     try:
+        import json
         import urllib.parse
         import urllib.request
-        import json
 
         base_code = target_lang.split("-")[0].lower()
         if base_code in ("hi", "mr", "ta", "te", "bn"):
@@ -209,9 +218,13 @@ def translate_explanation_paragraph(text: str, target_lang: str) -> str:
                     prefix = "वस्तुस्थिती: " if base_code == "mr" else "सच्चाई: "
                     clean_line = line[21:].strip()
 
-                query_enc = urllib.parse.urlencode({"q": clean_line[:400], "langpair": f"en|{base_code}"})
+                query_enc = urllib.parse.urlencode(
+                    {"q": clean_line[:400], "langpair": f"en|{base_code}"}
+                )
                 req_url = f"https://api.mymemory.translated.net/get?{query_enc}"
-                req = urllib.request.Request(req_url, headers={"User-Agent": "Mozilla/5.0"})
+                req = urllib.request.Request(
+                    req_url, headers={"User-Agent": "Mozilla/5.0"}
+                )
                 with urllib.request.urlopen(req, timeout=3.5) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                     text_out = data.get("responseData", {}).get("translatedText")
@@ -223,7 +236,9 @@ def translate_explanation_paragraph(text: str, target_lang: str) -> str:
             if translated_lines:
                 return "\n".join(translated_lines)
     except Exception as exc:
-        logger.warning("Online gateway translation failed for '%s': %s", target_lang, exc)
+        logger.warning(
+            "Online gateway translation failed for '%s': %s", target_lang, exc
+        )
 
     return text
 
@@ -245,10 +260,10 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
     if response.claim_results:
         echo_label = get_ui_string("claim_echo", lang)
         claim_snippet = response.claim_results[0].claim[:120].strip()
-        header_parts.append(f"*{echo_label}:* \"{claim_snippet}\"")
+        header_parts.append(f'*{echo_label}:* "{claim_snippet}"')
         header_parts.append(divider)
 
-    claim_blocks: List[str] = []
+    claim_blocks: list[str] = []
     total = len(response.claim_results)
     for idx, result in enumerate(response.claim_results, 1):
         claim_blocks.append(_format_single_claim(result, idx, total, lang=lang))
@@ -274,11 +289,12 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
         "\n\n".join(explanation_block),
     ]
 
-
-    footer_parts.extend([
-        divider,
-        "_MUMBAI express — AI-powered multilingual fact checking_",
-    ])
+    footer_parts.extend(
+        [
+            divider,
+            "_MUMBAI express — AI-powered multilingual fact checking_",
+        ]
+    )
 
     # BUG-17: was wrapping claim_blocks in a list which caused no leading/trailing
     # newlines around the claim section, making it run into dividers.
@@ -288,10 +304,10 @@ def format_whatsapp_reply(response: CheckResponse) -> str:
 
     # Safety trim
     if len(reply) > MAX_REPLY_LEN:
-        reply = reply[:MAX_REPLY_LEN - 3] + "…"
+        reply = reply[: MAX_REPLY_LEN - 3] + "…"
 
     if len(reply) > WHATSAPP_HARD_CAP:
-        reply = reply[:WHATSAPP_HARD_CAP - 3] + "…"
+        reply = reply[: WHATSAPP_HARD_CAP - 3] + "…"
 
     return reply
 
@@ -336,8 +352,8 @@ def translate_reply_back(
     # 1. Try Google Gemini with retry+backoff
     if settings.gemini_api_key:
         try:
-            from app.core.redaction import redact_for_external
             from app.core.gemini_client import call_gemini
+            from app.core.redaction import redact_for_external
 
             redacted_reply = redact_for_external(english_reply)
             prompt = (
@@ -349,11 +365,11 @@ def translate_reply_back(
             result = call_gemini(prompt, settings.gemini_api_key, settings.gemini_model)
             if result:
                 if len(result) > WHATSAPP_HARD_CAP:
-                    result = result[:WHATSAPP_HARD_CAP - 3] + "…"
+                    result = result[: WHATSAPP_HARD_CAP - 3] + "…"
                 return result
         except Exception as exc:
-            logger.warning("Gemini back-translation to '%s' failed: %s", target_lang, exc)
+            logger.warning(
+                "Gemini back-translation to '%s' failed: %s", target_lang, exc
+            )
 
     return english_reply
-
-

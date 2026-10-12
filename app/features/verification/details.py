@@ -27,27 +27,52 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 # Direction vocabulary (English + common Hindi transliterations)
 # ---------------------------------------------------------------------------
-_DIRECTION_WORDS = frozenset({
-    "north", "south", "east", "west",
-    "northeast", "northwest", "southeast", "southwest",
-    "uttar", "dakshin", "purv", "paschim",
-})
+_DIRECTION_WORDS = frozenset(
+    {
+        "north",
+        "south",
+        "east",
+        "west",
+        "northeast",
+        "northwest",
+        "southeast",
+        "southwest",
+        "uttar",
+        "dakshin",
+        "purv",
+        "paschim",
+    }
+)
 
 # ---------------------------------------------------------------------------
 # Negation vocabulary
 # ---------------------------------------------------------------------------
 _NEGATION_PATTERNS: list[str] = [
-    r"\bnot\b", r"\bno\b", r"\bnever\b",
-    r"\bcannot\b", r"\bcan't\b", r"\bcan not\b",
-    r"\bdoes not\b", r"\bdoesn't\b",
-    r"\bdo not\b", r"\bdon't\b",
-    r"\bdid not\b", r"\bdidn't\b",
-    r"\bwill not\b", r"\bwon't\b",
-    r"\bis not\b", r"\bisn't\b",
-    r"\bare not\b", r"\baren't\b",
-    r"\bwas not\b", r"\bwasn't\b",
-    r"\bwere not\b", r"\bweren't\b",
-    r"\bnahi\b", r"\bnahin\b", r"\bmat\b",      # Hindi negations
+    r"\bnot\b",
+    r"\bno\b",
+    r"\bnever\b",
+    r"\bcannot\b",
+    r"\bcan't\b",
+    r"\bcan not\b",
+    r"\bdoes not\b",
+    r"\bdoesn't\b",
+    r"\bdo not\b",
+    r"\bdon't\b",
+    r"\bdid not\b",
+    r"\bdidn't\b",
+    r"\bwill not\b",
+    r"\bwon't\b",
+    r"\bis not\b",
+    r"\bisn't\b",
+    r"\bare not\b",
+    r"\baren't\b",
+    r"\bwas not\b",
+    r"\bwasn't\b",
+    r"\bwere not\b",
+    r"\bweren't\b",
+    r"\bnahi\b",
+    r"\bnahin\b",
+    r"\bmat\b",  # Hindi negations
 ]
 _NEGATION_RE = re.compile("|".join(_NEGATION_PATTERNS), re.IGNORECASE)
 
@@ -61,11 +86,13 @@ def has_negation(text: str) -> bool:
 # Detail extractors
 # ---------------------------------------------------------------------------
 
+
 def _extract_directions(text: str) -> frozenset[str]:
     """Return direction words found in text."""
     text_lower = text.lower()
     return frozenset(
-        d for d in _DIRECTION_WORDS
+        d
+        for d in _DIRECTION_WORDS
         if re.search(r"\b" + re.escape(d) + r"\b", text_lower)
     )
 
@@ -80,15 +107,11 @@ def _extract_currency_amounts(text: str) -> frozenset[str]:
     amounts: set[str] = set()
 
     # Pattern: Rs/INR prefix then number
-    for m in re.finditer(
-        r"(?:rs\.?\s*|inr\s*)(\d[\d,]*(?:\.\d+)?)", text_lower
-    ):
+    for m in re.finditer(r"(?:rs\.?\s*|inr\s*)(\d[\d,]*(?:\.\d+)?)", text_lower):
         amounts.add(m.group(1).replace(",", ""))
 
     # Pattern: number then rupees/rs suffix
-    for m in re.finditer(
-        r"(\d[\d,]*(?:\.\d+)?)\s*(?:rupees?|rs\.?)\b", text_lower
-    ):
+    for m in re.finditer(r"(\d[\d,]*(?:\.\d+)?)\s*(?:rupees?|rs\.?)\b", text_lower):
         amounts.add(m.group(1).replace(",", ""))
 
     return frozenset(amounts)
@@ -98,8 +121,7 @@ def _extract_percentages(text: str) -> frozenset[str]:
     """Extract percentage figures, e.g. '2 percent', '2.5%'."""
     text_lower = text.lower()
     return frozenset(
-        m.group(1)
-        for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(?:percent|%)", text_lower)
+        m.group(1) for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(?:percent|%)", text_lower)
     )
 
 
@@ -116,17 +138,28 @@ def _extract_number_units(text: str) -> dict[str, frozenset[str]]:
     text_lower = text.lower()
     result: dict[str, frozenset[str]] = {}
     _UNITS = [
-        "month", "months", "year", "years", "day", "days",
-        "week", "weeks", "hour", "hours",
-        "km", "kg", "crore", "lakh", "thousand",
-        "million", "billion",
+        "month",
+        "months",
+        "year",
+        "years",
+        "day",
+        "days",
+        "week",
+        "weeks",
+        "hour",
+        "hours",
+        "km",
+        "kg",
+        "crore",
+        "lakh",
+        "thousand",
+        "million",
+        "billion",
     ]
     for unit in _UNITS:
         values = frozenset(
             m.group(1)
-            for m in re.finditer(
-                r"(\d+(?:\.\d+)?)\s*" + re.escape(unit), text_lower
-            )
+            for m in re.finditer(r"(\d+(?:\.\d+)?)\s*" + re.escape(unit), text_lower)
         )
         if values:
             # normalise plural → singular key
@@ -141,6 +174,7 @@ def _extract_number_units(text: str) -> dict[str, frozenset[str]]:
 # ---------------------------------------------------------------------------
 # Public interface
 # ---------------------------------------------------------------------------
+
 
 def check_detail_conflict(claim: str, evidence: str) -> Optional[str]:
     """

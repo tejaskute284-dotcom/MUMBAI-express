@@ -11,7 +11,7 @@ import sqlite3
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +75,8 @@ def log_claim(
     overall_verdict: str,
     confidence: float = 0.0,
     explanation: str = "",
-    claim_results: Optional[List[Dict[str, Any]]] = None,
-    timings: Optional[Dict[str, float]] = None,
+    claim_results: Optional[list[dict[str, Any]]] = None,
+    timings: Optional[dict[str, float]] = None,
     cached: bool = False,
 ) -> None:
     """
@@ -86,12 +86,15 @@ def log_claim(
     text are stored — the verbatim raw_text is never written to disk.
     """
     import hashlib
+
     from app.core.redaction import redact as _redact
 
     now_iso = datetime.now(timezone.utc).isoformat()
     # Store a redacted snippet (≤ 200 chars) — never the full raw text
     redacted_snippet = _redact(raw_text)[:200] if raw_text else ""
-    claim_hash = hashlib.sha256(raw_text.strip().encode("utf-8")).hexdigest() if raw_text else ""
+    claim_hash = (
+        hashlib.sha256(raw_text.strip().encode("utf-8")).hexdigest() if raw_text else ""
+    )
     claim_results_str = json.dumps(claim_results or [])
     timings_str = json.dumps(timings or {})
 
@@ -123,17 +126,23 @@ def log_claim(
             )
             conn.commit()
             conn.close()
-            logger.debug("Claim logged: hash=%s verdict=%s", claim_hash[:8], overall_verdict)
+            logger.debug(
+                "Claim logged: hash=%s verdict=%s", claim_hash[:8], overall_verdict
+            )
         except Exception as exc:
             logger.warning("Failed to log claim to SQLite: %s", exc)
 
 
-def query_stats() -> Dict[str, Any]:
+def query_stats() -> dict[str, Any]:
     """Return claim volume, verdict breakdown, and avg processing time."""
     with _lock:
         try:
             if not DB_PATH.exists():
-                return {"total_processed": 0, "verdict_distribution": {}, "avg_pipeline_ms": 0}
+                return {
+                    "total_processed": 0,
+                    "verdict_distribution": {},
+                    "avg_pipeline_ms": 0,
+                }
 
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
@@ -141,7 +150,9 @@ def query_stats() -> Dict[str, Any]:
             cur.execute("SELECT COUNT(*) FROM claim_logs")
             total = cur.fetchone()[0]
 
-            cur.execute("SELECT overall_verdict, COUNT(*) FROM claim_logs GROUP BY overall_verdict")
+            cur.execute(
+                "SELECT overall_verdict, COUNT(*) FROM claim_logs GROUP BY overall_verdict"
+            )
             verdicts = {row[0]: row[1] for row in cur.fetchall()}
 
             conn.close()
@@ -152,14 +163,18 @@ def query_stats() -> Dict[str, Any]:
             }
         except Exception as exc:
             logger.warning("Failed to query stats from SQLite: %s", exc)
-            return {"total_processed": 0, "verdict_distribution": {}, "avg_pipeline_ms": 0}
+            return {
+                "total_processed": 0,
+                "verdict_distribution": {},
+                "avg_pipeline_ms": 0,
+            }
 
 
 def query_claims(
     page: int = 1,
     limit: int = 20,
     verdict: Optional[str] = None,
-) -> Tuple[int, List[Dict[str, Any]]]:
+) -> tuple[int, list[dict[str, Any]]]:
     """Return paginated list of claim logs."""
     offset = (page - 1) * limit
     with _lock:
@@ -172,7 +187,10 @@ def query_claims(
             cur = conn.cursor()
 
             if verdict:
-                cur.execute("SELECT COUNT(*) FROM claim_logs WHERE overall_verdict = ?", (verdict,))
+                cur.execute(
+                    "SELECT COUNT(*) FROM claim_logs WHERE overall_verdict = ?",
+                    (verdict,),
+                )
                 total = cur.fetchone()[0]
                 cur.execute(
                     "SELECT * FROM claim_logs WHERE overall_verdict = ? ORDER BY id DESC LIMIT ? OFFSET ?",

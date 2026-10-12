@@ -8,9 +8,7 @@ import hmac
 import re
 
 # Email pattern matching common email addresses
-EMAIL_REGEX = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-)
+EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
 # WhatsApp prefixed numbers e.g. whatsapp:+919876543210
 WHATSAPP_PREFIX_REGEX = re.compile(
@@ -24,14 +22,10 @@ E164_PHONE_REGEX = re.compile(
 )
 
 # Indian mobile numbers e.g. 9876543210, optionally prefixed by +91 or 0
-INDIAN_PHONE_REGEX = re.compile(
-    r"(?:\+91[\-\s]?|0)?[6-9]\d{9}\b"
-)
+INDIAN_PHONE_REGEX = re.compile(r"(?:\+91[\-\s]?|0)?[6-9]\d{9}\b")
 
 # Generic long digit sequences (10 or more digits, with optional separators)
-LONG_DIGIT_REGEX = re.compile(
-    r"\b\d[\d\s\-]{8,}\d\b"
-)
+LONG_DIGIT_REGEX = re.compile(r"\b\d[\d\s\-]{8,}\d\b")
 
 
 def hash_identifier(value: str, secret: str = "") -> str:
@@ -52,9 +46,12 @@ def hash_identifier(value: str, secret: str = "") -> str:
     # Lazy import to avoid circular dependency at module load
     try:
         from app.core.config import settings as _settings  # type: ignore
+
         _secret = getattr(_settings, "sender_hash_secret", "")
         if _secret:
-            return hmac.new(_secret.encode("utf-8"), normalized, hashlib.sha256).hexdigest()
+            return hmac.new(
+                _secret.encode("utf-8"), normalized, hashlib.sha256
+            ).hexdigest()
     except Exception:
         pass
     return hashlib.sha256(normalized).hexdigest()
@@ -99,13 +96,9 @@ EXTERNAL_UPI_REGEX = re.compile(
     re.IGNORECASE,
 )
 
-EXTERNAL_PAN_REGEX = re.compile(
-    r"\b[A-Za-z]{5}[0-9]{4}[A-Za-z]\b"
-)
+EXTERNAL_PAN_REGEX = re.compile(r"\b[A-Za-z]{5}[0-9]{4}[A-Za-z]\b")
 
-EXTERNAL_CARD_REGEX = re.compile(
-    r"(?<!\w)(?:(?:\d{4}[-\s]){3}\d{4}|\d{16})(?!\w)"
-)
+EXTERNAL_CARD_REGEX = re.compile(r"(?<!\w)(?:(?:\d{4}[-\s]){3}\d{4}|\d{16})(?!\w)")
 
 EXTERNAL_AADHAAR_REGEX = re.compile(
     r"(?<![+\w:])(?:(?:\d{4}[-\s]){2}\d{4}|\d{12})(?!\w)"
@@ -116,9 +109,7 @@ EXTERNAL_PHONE_REGEX = re.compile(
     re.IGNORECASE,
 )
 
-EXTERNAL_LONG_DIGIT_REGEX = re.compile(
-    r"(?<!\w)\d{11,}(?!\w)"
-)
+EXTERNAL_LONG_DIGIT_REGEX = re.compile(r"(?<!\w)\d{11,}(?!\w)")
 
 
 def redact_for_external(text: str) -> str:

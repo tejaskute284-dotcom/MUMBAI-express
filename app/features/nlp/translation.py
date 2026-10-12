@@ -28,7 +28,7 @@ Security notes
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 from app.core.config import settings
 
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # Maps ISO 639-1 language codes to their Hugging Face model identifiers.
 # All entries currently use the same M2M100 checkpoint; extend this dict if
 # language-specific fine-tuned models become available.
-TRANSLATION_MODELS: Dict[str, str] = {
+TRANSLATION_MODELS: dict[str, str] = {
     "hi": "facebook/m2m100_418M",
     "mr": "facebook/m2m100_418M",
     "ta": "facebook/m2m100_418M",
@@ -48,7 +48,7 @@ TRANSLATION_MODELS: Dict[str, str] = {
 
 # In-process cache: model_name → (tokenizer, model).
 # Avoids repeated deserialization (each M2M100 load takes ~5–10 s).
-_translation_cache: Dict[str, Tuple[Any, Any]] = {}
+_translation_cache: dict[str, tuple[Any, Any]] = {}
 
 
 def translate_with_mymemory(text: str, source_lang: str) -> Optional[str]:
@@ -60,7 +60,9 @@ def translate_with_mymemory(text: str, source_lang: str) -> Optional[str]:
 
         base_code = source_lang.split("-")[0].lower()
         if base_code in ("hi", "mr", "ta", "te", "bn"):
-            query_enc = urllib.parse.urlencode({"q": text.strip()[:400], "langpair": f"{base_code}|en"})
+            query_enc = urllib.parse.urlencode(
+                {"q": text.strip()[:400], "langpair": f"{base_code}|en"}
+            )
             req_url = f"https://api.mymemory.translated.net/get?{query_enc}"
             req = urllib.request.Request(req_url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=3.5) as resp:
@@ -69,7 +71,9 @@ def translate_with_mymemory(text: str, source_lang: str) -> Optional[str]:
                 if text_out and not text_out.startswith("MYMEMORY WARNING"):
                     return text_out.strip()
     except Exception as exc:
-        logger.debug("MyMemory translate to English failed for '%s': %s", source_lang, exc)
+        logger.debug(
+            "MyMemory translate to English failed for '%s': %s", source_lang, exc
+        )
 
     return None
 
@@ -84,11 +88,15 @@ def translate_with_gemini(text: str, lang_code: str = "") -> Optional[str]:
         return None
 
     try:
-        from app.core.redaction import redact_for_external
         from app.core.gemini_client import call_gemini
+        from app.core.redaction import redact_for_external
 
         redacted_text = redact_for_external(text)
-        lang_hint = f"from language code '{lang_code}' " if lang_code and lang_code != "und" else ""
+        lang_hint = (
+            f"from language code '{lang_code}' "
+            if lang_code and lang_code != "und"
+            else ""
+        )
         prompt = (
             f"Translate the following text {lang_hint}accurately into clear, natural English. "
             "Preserve any specific medical, factual, or cultural claims exactly. "
@@ -114,7 +122,7 @@ def translate_to_english(
     lang_code: str,
     tokenizer: Optional[Any] = None,
     model: Optional[Any] = None,
-) -> Tuple[str, bool]:
+) -> tuple[str, bool]:
     """
     Translate input text to English.
     Returns a tuple of (translated_text, is_fallback).
@@ -147,7 +155,11 @@ def translate_to_english(
     # Handle Hinglish and Romanized Marathi via Gemini.
     # M2M100 has no explicit hi-Latn / mr-Latn source language tokens.
     if lang_code in ("hi-Latn", "mr-Latn"):
-        lang_display = "Hinglish (Romanized Hindi)" if lang_code == "hi-Latn" else "Romanized Marathi"
+        lang_display = (
+            "Hinglish (Romanized Hindi)"
+            if lang_code == "hi-Latn"
+            else "Romanized Marathi"
+        )
         gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
@@ -162,7 +174,10 @@ def translate_to_english(
     # Check local M2M100 model availability for this language code.
     model_name = TRANSLATION_MODELS.get(lang_code)
     if not model_name and not (tokenizer and model):
-        logger.warning("No local translation model mapping configured for '%s'. Trying Gemini fallback.", lang_code)
+        logger.warning(
+            "No local translation model mapping configured for '%s'. Trying Gemini fallback.",
+            lang_code,
+        )
         gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
@@ -187,7 +202,9 @@ def translate_to_english(
         import torch
 
         active_tokenizer.src_lang = lang_code
-        inputs = active_tokenizer(cleaned, return_tensors="pt", truncation=True, max_length=512)
+        inputs = active_tokenizer(
+            cleaned, return_tensors="pt", truncation=True, max_length=512
+        )
 
         with torch.no_grad():  # Disable gradient tracking to halve memory overhead.
             translated_tokens = active_model.generate(
@@ -197,7 +214,9 @@ def translate_to_english(
                 num_beams=4,
             )
 
-        decoded = active_tokenizer.decode(translated_tokens[0], skip_special_tokens=True)
+        decoded = active_tokenizer.decode(
+            translated_tokens[0], skip_special_tokens=True
+        )
         if isinstance(decoded, str) and decoded.strip():
             return decoded.strip(), False
 
@@ -212,7 +231,11 @@ def translate_to_english(
         return cleaned, True
 
     except Exception as exc:
-        logger.warning("Local translation for '%s' failed: %s. Trying Gemini fallback.", lang_code, exc)
+        logger.warning(
+            "Local translation for '%s' failed: %s. Trying Gemini fallback.",
+            lang_code,
+            exc,
+        )
         gemini_result = translate_with_gemini(cleaned, lang_code)
         if gemini_result:
             return gemini_result, False
@@ -222,4 +245,3 @@ def translate_to_english(
             return mymemory_result, False
 
         return cleaned, True
-

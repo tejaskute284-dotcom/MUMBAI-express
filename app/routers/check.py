@@ -21,12 +21,11 @@ import os
 import tempfile
 import wave
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
 
 from app.contracts.api import CheckAPIResponse, CheckRequest
 from app.contracts.models import IngestedMessage
@@ -50,7 +49,6 @@ STATIC_DIR = WORKSPACE_ROOT / "static"
 WEB_DIR = WORKSPACE_ROOT / "web" / "whatsapp"
 
 
-
 def _read_html_page(filename: str, fallback_title: str) -> str:
     path = STATIC_DIR / filename
     if path.exists():
@@ -68,10 +66,14 @@ def _read_whatsapp_page() -> str:
             return index_path.read_text(encoding="utf-8")
         except Exception as exc:
             logger.error("Failed to read web/whatsapp/index.html: %s", exc)
-    return _read_html_page("whatsapp.html", "MUMBAI express — WhatsApp Web AI Fact-Checking Bot")
+    return _read_html_page(
+        "whatsapp.html", "MUMBAI express — WhatsApp Web AI Fact-Checking Bot"
+    )
 
 
-@router.post("/api/check", response_model=CheckAPIResponse, summary="Verify claim JSON endpoint")
+@router.post(
+    "/api/check", response_model=CheckAPIResponse, summary="Verify claim JSON endpoint"
+)
 def check_claim_api(req: CheckRequest) -> CheckAPIResponse:
     """Verify a forwarded claim or text snippet and return structured verdict and explanation."""
     raw_text = (req.text or req.claim or "").strip()
@@ -90,8 +92,8 @@ def check_claim_api(req: CheckRequest) -> CheckAPIResponse:
     result = run_pipeline(ingested)
 
     # Flatten evidence list for easy frontend rendering
-    evidence_list: List[Dict[str, Any]] = []
-    all_raw_evidence: List[Any] = []
+    evidence_list: list[dict[str, Any]] = []
+    all_raw_evidence: list[Any] = []
     for cr in result.claim_results:
         for ev in cr.evidence:
             all_raw_evidence.append(ev)
@@ -101,8 +103,12 @@ def check_claim_api(req: CheckRequest) -> CheckAPIResponse:
                     "url": ev.url,
                     "domain": ev.source_domain,
                     "snippet": ev.snippet,
-                    "tier": ev.tier.value if hasattr(ev.tier, "value") else str(ev.tier),
-                    "rating": ev.rating.value if hasattr(ev.rating, "value") else str(ev.rating),
+                    "tier": ev.tier.value
+                    if hasattr(ev.tier, "value")
+                    else str(ev.tier),
+                    "rating": ev.rating.value
+                    if hasattr(ev.rating, "value")
+                    else str(ev.rating),
                     "score": ev.score,
                 }
             )
@@ -142,8 +148,12 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             return {"success": False, "error": "Empty file uploaded.", "text": ""}
 
         from app.features.ingestion.ocr import extract_text_from_bytes
+
         ocr_result = extract_text_from_bytes(content)
-        return {"success": bool(ocr_result.get("text")), "text": ocr_result.get("text", "")}
+        return {
+            "success": bool(ocr_result.get("text")),
+            "text": ocr_result.get("text", ""),
+        }
     except Exception as exc:
         logger.warning("OCR processing error: %s", exc)
         return {"success": False, "error": str(exc), "text": ""}
@@ -157,6 +167,7 @@ async def voice_endpoint(file: UploadFile = File(...)):
             return {"success": False, "error": "Empty audio file uploaded.", "text": ""}
 
         from app.features.ingestion.asr import get_whisper_model, load_whisper_model
+
         model = get_whisper_model() or load_whisper_model()
 
         # 1. Try pure in-memory WAV decoding if content is WAV (requires no ffmpeg!)
@@ -170,7 +181,10 @@ async def voice_endpoint(file: UploadFile = File(...)):
                     frames = w.readframes(w.getnframes())
 
                 if sampwidth == 2:  # 16-bit PCM
-                    audio_np = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+                    audio_np = (
+                        np.frombuffer(frames, dtype=np.int16).astype(np.float32)
+                        / 32768.0
+                    )
                     if channels > 1:
                         audio_np = audio_np.reshape(-1, channels).mean(axis=1)
 
@@ -178,12 +192,18 @@ async def voice_endpoint(file: UploadFile = File(...)):
                     if framerate != 16000 and len(audio_np) > 0:
                         target_len = int(len(audio_np) * 16000 / framerate)
                         indices = np.linspace(0, len(audio_np) - 1, target_len)
-                        audio_np = np.interp(indices, np.arange(len(audio_np)), audio_np)
+                        audio_np = np.interp(
+                            indices, np.arange(len(audio_np)), audio_np
+                        )
 
                     if model is not None and len(audio_np) > 0:
                         res = model.transcribe(audio_np, fp16=False)
                         transcript = (res.get("text") or "").strip()
-                        return {"success": bool(transcript), "text": transcript, "language": res.get("language", "auto")}
+                        return {
+                            "success": bool(transcript),
+                            "text": transcript,
+                            "language": res.get("language", "auto"),
+                        }
             except Exception as wav_err:
                 logger.warning("WAV in-memory decode warning: %s", wav_err)
 
@@ -197,7 +217,11 @@ async def voice_endpoint(file: UploadFile = File(...)):
             if model:
                 res = model.transcribe(tmp_path, fp16=False)
                 transcript = (res.get("text") or "").strip()
-                return {"success": bool(transcript), "text": transcript, "language": res.get("language", "auto")}
+                return {
+                    "success": bool(transcript),
+                    "text": transcript,
+                    "language": res.get("language", "auto"),
+                }
         except Exception as whisper_err:
             logger.warning("Whisper file transcription warning: %s", whisper_err)
         finally:
@@ -207,7 +231,11 @@ async def voice_endpoint(file: UploadFile = File(...)):
                 except OSError:
                     pass
 
-        return {"success": False, "error": "Could not decode audio. Please use the microphone button or submit text.", "text": ""}
+        return {
+            "success": False,
+            "error": "Could not decode audio. Please use the microphone button or submit text.",
+            "text": "",
+        }
     except Exception as exc:
         logger.warning("Voice endpoint error: %s", exc)
         return {"success": False, "error": str(exc), "text": ""}
@@ -221,8 +249,9 @@ async def pdf_endpoint(file: UploadFile = File(...)):
         if not content:
             return {"success": False, "error": "Empty PDF file uploaded.", "text": ""}
 
-        from app.features.ingestion.pdf import extract_text_from_pdf_bytes
         from app.features.ingestion.ocr import get_ocr_reader
+        from app.features.ingestion.pdf import extract_text_from_pdf_bytes
+
         reader = get_ocr_reader()
         result = extract_text_from_pdf_bytes(content, reader=reader)
         extracted = (result.get("text") or "").strip()
@@ -238,15 +267,22 @@ async def pdf_endpoint(file: UploadFile = File(...)):
         return {"success": False, "error": str(exc), "text": ""}
 
 
-
-
-
-
 # ── Frontend Web Routes ─────────────────────────────────────────────────────────
 
-@router.get("/", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Screen")
-@router.get("/whatsapp", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Screen")
-@router.get("/demo", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Demo Screen")
+
+@router.get(
+    "/", response_class=HTMLResponse, summary="WhatsApp Web AI Fact-Checking Screen"
+)
+@router.get(
+    "/whatsapp",
+    response_class=HTMLResponse,
+    summary="WhatsApp Web AI Fact-Checking Screen",
+)
+@router.get(
+    "/demo",
+    response_class=HTMLResponse,
+    summary="WhatsApp Web AI Fact-Checking Demo Screen",
+)
 def whatsapp_portal_page() -> str:
     """Realistic WhatsApp Web Desktop Screen with MUMBAI express AI Bot."""
     return _read_whatsapp_page()

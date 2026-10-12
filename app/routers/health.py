@@ -23,6 +23,7 @@ behind an authenticated API gateway, these endpoints should be allowlisted.
 from __future__ import annotations
 
 import time
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
@@ -36,6 +37,7 @@ _START_TIME = time.time()
 
 class HealthResponse(BaseModel):
     """Minimal liveness payload returned by GET /health."""
+
     status: str
     app_name: str
     env: str
@@ -45,6 +47,7 @@ class HealthResponse(BaseModel):
 
 class DetailedHealthResponse(HealthResponse):
     """Extended diagnostics payload returned by GET /health/detailed."""
+
     environment: dict[str, str] = Field(default_factory=dict)
     # Features are represented as booleans (key present = True) to avoid
     # leaking secret values in the response body.
@@ -70,7 +73,11 @@ async def health_check() -> HealthResponse:
     )
 
 
-@router.get("/health/detailed", response_model=DetailedHealthResponse, summary="Diagnostics probe")
+@router.get(
+    "/health/detailed",
+    response_model=DetailedHealthResponse,
+    summary="Diagnostics probe",
+)
 async def health_check_detailed(request: Request) -> DetailedHealthResponse:
     """
     Return 200 OK with model readiness status, feature flags (no secrets exposed).

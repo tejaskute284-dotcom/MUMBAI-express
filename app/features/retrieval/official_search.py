@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from app.contracts.models import EvidenceItem
 from app.core.config import settings
@@ -25,7 +25,7 @@ from app.core.constants import Tier
 
 logger = logging.getLogger(__name__)
 
-TOPIC_DOMAIN_MAP: Dict[str, List[str]] = {
+TOPIC_DOMAIN_MAP: dict[str, list[str]] = {
     "banking": ["rbi.org.in", "npci.org.in", "cert-in.org.in"],
     "health": ["mohfw.gov.in", "icmr.gov.in", "who.int"],
     "identity": ["uidai.gov.in", "pib.gov.in"],
@@ -34,57 +34,216 @@ TOPIC_DOMAIN_MAP: Dict[str, List[str]] = {
     "government": ["pib.gov.in", "mygov.in"],
 }
 
-TOPIC_KEYWORDS: Dict[str, List[str]] = {
+TOPIC_KEYWORDS: dict[str, list[str]] = {
     "banking": [
-        "rbi", "upi", "bank", "banking", "npci", "atm", "payment", "payments",
-        "neft", "rtgs", "imps", "loan", "repo rate", "credit card", "debit card",
-        "otp", "cyber fraud", "phishing", "bank account", "kyc", "reserve bank",
-        "mdr", "merchant discount rate", "merchant payment", "merchant upi", "qr code payment",
+        "rbi",
+        "upi",
+        "bank",
+        "banking",
+        "npci",
+        "atm",
+        "payment",
+        "payments",
+        "neft",
+        "rtgs",
+        "imps",
+        "loan",
+        "repo rate",
+        "credit card",
+        "debit card",
+        "otp",
+        "cyber fraud",
+        "phishing",
+        "bank account",
+        "kyc",
+        "reserve bank",
+        "mdr",
+        "merchant discount rate",
+        "merchant payment",
+        "merchant upi",
+        "qr code payment",
     ],
     "health": [
-        "health", "vaccine", "vaccination", "covid", "corona", "virus", "disease",
-        "hospital", "medical", "doctor", "medicine", "mohfw", "icmr", "epidemic",
-        "infection", "cancer", "ayushman", "who", "paracetamol", "dosage",
+        "health",
+        "vaccine",
+        "vaccination",
+        "covid",
+        "corona",
+        "virus",
+        "disease",
+        "hospital",
+        "medical",
+        "doctor",
+        "medicine",
+        "mohfw",
+        "icmr",
+        "epidemic",
+        "infection",
+        "cancer",
+        "ayushman",
+        "who",
+        "paracetamol",
+        "dosage",
     ],
     "identity": [
-        "aadhaar", "uidai", "pan card", "passport", "voter id", "election card",
+        "aadhaar",
+        "uidai",
+        "pan card",
+        "passport",
+        "voter id",
+        "election card",
     ],
     "securities": [
-        "sebi", "stock", "stocks", "share market", "bse", "nse", "mutual fund",
-        "trading", "demat", "investment", "ipo", "sensex", "nifty",
+        "sebi",
+        "stock",
+        "stocks",
+        "share market",
+        "bse",
+        "nse",
+        "mutual fund",
+        "trading",
+        "demat",
+        "investment",
+        "ipo",
+        "sensex",
+        "nifty",
     ],
     "scheme": [
-        "scheme", "yojana", "subsidy", "pension", "pm awas", "pm kisan",
-        "free laptop", "ration", "allowance", "scholarship", "welfare", "grant",
+        "scheme",
+        "yojana",
+        "subsidy",
+        "pension",
+        "pm awas",
+        "pm kisan",
+        "free laptop",
+        "ration",
+        "allowance",
+        "scholarship",
+        "welfare",
+        "grant",
         "pradhan mantri",
     ],
     "government": [
-        "government", "govt", "sarkar", "ministry", "official notice",
-        "notification", "gazette", "pib", "cabinet", "parliament", "supreme court",
+        "government",
+        "govt",
+        "sarkar",
+        "ministry",
+        "official notice",
+        "notification",
+        "gazette",
+        "pib",
+        "cabinet",
+        "parliament",
+        "supreme court",
     ],
 }
 
 _GENERIC_WORDS = {
-    "government", "govt", "india", "indian", "official", "portal", "website",
-    "ministry", "dept", "department", "press", "information", "bureau", "pib",
-    "welcome", "home", "homepage", "page", "public", "national", "central",
-    "state", "announcement", "announcements", "release", "releases", "notice",
-    "notices", "notification", "notifications", "online", "services", "citizen",
-    "citizens", "mygov", "portal", "click", "here", "read", "more", "news",
-    "update", "updates", "media", "latest",
+    "government",
+    "govt",
+    "india",
+    "indian",
+    "official",
+    "portal",
+    "website",
+    "ministry",
+    "dept",
+    "department",
+    "press",
+    "information",
+    "bureau",
+    "pib",
+    "welcome",
+    "home",
+    "homepage",
+    "page",
+    "public",
+    "national",
+    "central",
+    "state",
+    "announcement",
+    "announcements",
+    "release",
+    "releases",
+    "notice",
+    "notices",
+    "notification",
+    "notifications",
+    "online",
+    "services",
+    "citizen",
+    "citizens",
+    "mygov",
+    "portal",
+    "click",
+    "here",
+    "read",
+    "more",
+    "news",
+    "update",
+    "updates",
+    "media",
+    "latest",
 }
 
 _STOP_WORDS = {
-    "the", "is", "at", "which", "on", "a", "an", "and", "or", "for", "with",
-    "that", "this", "from", "to", "in", "of", "by", "has", "have", "had",
-    "been", "are", "was", "were", "will", "would", "can", "could", "all",
-    "any", "new", "under", "per", "about", "into", "over", "after", "before",
-    "between", "above", "below", "such", "there", "their", "them", "then",
-    "giving", "gives", "given", "give", "said", "says",
+    "the",
+    "is",
+    "at",
+    "which",
+    "on",
+    "a",
+    "an",
+    "and",
+    "or",
+    "for",
+    "with",
+    "that",
+    "this",
+    "from",
+    "to",
+    "in",
+    "of",
+    "by",
+    "has",
+    "have",
+    "had",
+    "been",
+    "are",
+    "was",
+    "were",
+    "will",
+    "would",
+    "can",
+    "could",
+    "all",
+    "any",
+    "new",
+    "under",
+    "per",
+    "about",
+    "into",
+    "over",
+    "after",
+    "before",
+    "between",
+    "above",
+    "below",
+    "such",
+    "there",
+    "their",
+    "them",
+    "then",
+    "giving",
+    "gives",
+    "given",
+    "give",
+    "said",
+    "says",
 }
 
 
-def route_claim_topic(claim: str) -> Tuple[Optional[str], List[str]]:
+def route_claim_topic(claim: str) -> tuple[Optional[str], list[str]]:
     """
     Route a claim to an official topic category and list of authoritative government domains.
     Returns (topic, list_of_domains) or (None, []).
@@ -93,7 +252,14 @@ def route_claim_topic(claim: str) -> Tuple[Optional[str], List[str]]:
         return None, []
 
     claim_lower = claim.lower()
-    topic_order = ["banking", "health", "identity", "securities", "scheme", "government"]
+    topic_order = [
+        "banking",
+        "health",
+        "identity",
+        "securities",
+        "scheme",
+        "government",
+    ]
 
     for topic in topic_order:
         keywords = TOPIC_KEYWORDS.get(topic, [])
@@ -120,7 +286,9 @@ def passes_relevance_gate(claim: str, snippet: str, min_overlap: float = 0.15) -
     text_lower = snippet.lower()
     text_tokens = set(re.findall(r"\b[a-zA-Z0-9]{3,}\b", text_lower))
 
-    overlap = sum(1 for w in content_claim if w in text_tokens or w in text_lower) / len(content_claim)
+    overlap = sum(
+        1 for w in content_claim if w in text_tokens or w in text_lower
+    ) / len(content_claim)
     return overlap >= min_overlap
 
 
@@ -165,9 +333,9 @@ def passes_detail_check(claim: str, snippet: str) -> bool:
 
 def search_official_sources(
     claim: str,
-    domains: List[str],
+    domains: list[str],
     provider: Optional[str] = None,
-) -> List[EvidenceItem]:
+) -> list[EvidenceItem]:
     """
     Search official/government domains using site: operators.
     Returns a list of EvidenceItems tagged as Tier.TIER_2_GOV_PIB.
@@ -181,18 +349,21 @@ def search_official_sources(
         return []
 
     from app.core.redaction import redact_for_external
+
     cleaned_claim = redact_for_external(claim.strip())
 
     site_query = " OR ".join(f"site:{d}" for d in domains)
     query = f"{cleaned_claim} ({site_query})"
 
-    items: List[EvidenceItem] = []
+    items: list[EvidenceItem] = []
     try:
         if active_provider == "brave":
             from app.features.retrieval.search_web import _search_brave
+
             items = _search_brave(query, api_key)
         elif active_provider == "tavily":
             from app.features.retrieval.search_web import _search_tavily
+
             items = _search_tavily(query, api_key)
         else:
             logger.warning("Unsupported official search provider: %s", active_provider)

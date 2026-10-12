@@ -74,7 +74,9 @@ def download_audio(url: str) -> bytes:
 
     content = resp.content
     if len(content) > MAX_FILE_BYTES:
-        raise ValueError(f"Audio file too large: {len(content)} bytes (max {MAX_FILE_BYTES})")
+        raise ValueError(
+            f"Audio file too large: {len(content)} bytes (max {MAX_FILE_BYTES})"
+        )
     return content
 
 
@@ -100,23 +102,38 @@ def transcribe_audio(url: str, model: Optional[Any] = None) -> ASRResult:
         # LOOPHOLE-05: Audio duration pre-check before heavy Whisper inference
         try:
             import io
+
             if audio_bytes.startswith(b"RIFF") and b"WAVE" in audio_bytes[:16]:
                 import wave
+
                 with wave.open(io.BytesIO(audio_bytes), "rb") as w:
                     frames = w.getnframes()
                     rate = w.getframerate()
                     dur = frames / float(rate) if rate else 0.0
                     if dur > MAX_AUDIO_DURATION_SEC:
-                        logger.warning("Audio duration %.1fs exceeds max %0.1fs. Rejecting.", dur, MAX_AUDIO_DURATION_SEC)
-                        return ASRResult(text="", language="unknown", duration_seconds=dur)
+                        logger.warning(
+                            "Audio duration %.1fs exceeds max %0.1fs. Rejecting.",
+                            dur,
+                            MAX_AUDIO_DURATION_SEC,
+                        )
+                        return ASRResult(
+                            text="", language="unknown", duration_seconds=dur
+                        )
             else:
                 try:
                     from pydub import AudioSegment  # type: ignore
+
                     seg = AudioSegment.from_file(io.BytesIO(audio_bytes))
                     dur = len(seg) / 1000.0
                     if dur > MAX_AUDIO_DURATION_SEC:
-                        logger.warning("Audio duration %.1fs exceeds max %0.1fs. Rejecting.", dur, MAX_AUDIO_DURATION_SEC)
-                        return ASRResult(text="", language="unknown", duration_seconds=dur)
+                        logger.warning(
+                            "Audio duration %.1fs exceeds max %0.1fs. Rejecting.",
+                            dur,
+                            MAX_AUDIO_DURATION_SEC,
+                        )
+                        return ASRResult(
+                            text="", language="unknown", duration_seconds=dur
+                        )
                 except Exception:
                     pass
         except Exception as probe_err:

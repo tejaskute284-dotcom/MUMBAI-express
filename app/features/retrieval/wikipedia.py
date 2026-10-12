@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/features/retrieval/wikipedia.py
 ─────────────────────────────────────
 Wikipedia evidence retriever using official Wikipedia REST API.
@@ -33,9 +33,7 @@ window that would inflate LLM token costs.
 from __future__ import annotations
 
 import logging
-import sys
 import urllib.parse
-from typing import List, Optional
 
 from app.contracts.models import EvidenceItem
 from app.core.constants import Rating, Tier
@@ -52,7 +50,7 @@ WIKI_REST_SUMMARY_API = "https://en.wikipedia.org/api/rest_v1/page/summary/"
 MAX_SUMMARY_CHARS = 1200
 
 
-def search_wikipedia(query: str, lang: str = "en") -> List[EvidenceItem]:
+def search_wikipedia(query: str, lang: str = "en") -> list[EvidenceItem]:
     """
     Search Wikipedia for relevant reference articles matching query.
     Returns EvidenceItem list marked as Tier 4 (background reference only).
@@ -74,8 +72,9 @@ def search_wikipedia(query: str, lang: str = "en") -> List[EvidenceItem]:
 
     # PII redaction before external dispatch (D15 compliance).
     from app.core.redaction import redact_for_external
+
     cleaned_query = redact_for_external(query.strip())
-    evidence_items: List[EvidenceItem] = []
+    evidence_items: list[EvidenceItem] = []
 
     try:
         # Step 1: Search Wikipedia for top matching article titles.
@@ -88,7 +87,9 @@ def search_wikipedia(query: str, lang: str = "en") -> List[EvidenceItem]:
         }
         search_url = f"{WIKI_SEARCH_API}?{urllib.parse.urlencode(search_params)}"
         # Bot-identification User-Agent per Wikipedia API etiquette guidelines.
-        headers = {"User-Agent": "MUMBAI express/1.0 (+https://MUMBAI express.org; factcheck-bot)"}
+        headers = {
+            "User-Agent": "MUMBAI express/1.0 (+https://MUMBAI express.org; factcheck-bot)"
+        }
 
         search_resp = safe_get(search_url, timeout=5, headers=headers)
         if search_resp.status_code != 200:
@@ -116,7 +117,11 @@ def search_wikipedia(query: str, lang: str = "en") -> List[EvidenceItem]:
 
                 summary_data = summary_resp.json()
                 extract = summary_data.get("extract", "")
-                page_url = summary_data.get("content_urls", {}).get("desktop", {}).get("page", "")
+                page_url = (
+                    summary_data.get("content_urls", {})
+                    .get("desktop", {})
+                    .get("page", "")
+                )
 
                 if extract and page_url:
                     # Truncate extract to limit downstream token cost.

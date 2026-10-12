@@ -6,6 +6,6 @@ This file re-exports `app` so that existing references to
 `uvicorn app_main:app` keep working during the transition.
 """
 
-from app.main import app  # noqa: F401
+from app.main import app
 
 __all__ = ["app"]

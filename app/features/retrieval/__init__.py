@@ -1,4 +1,4 @@
-﻿"""
+"""
 Evidence retrieval feature package for MUMBAI express.
 
 Implements a five-tier trust hierarchy for evidence sourcing:

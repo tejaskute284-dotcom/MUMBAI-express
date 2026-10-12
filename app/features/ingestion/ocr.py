@@ -103,7 +103,9 @@ def download_image(url: str) -> bytes:
 
     content = resp.content
     if len(content) > MAX_FILE_BYTES:
-        raise ValueError(f"Image too large: {len(content)} bytes (max {MAX_FILE_BYTES})")
+        raise ValueError(
+            f"Image too large: {len(content)} bytes (max {MAX_FILE_BYTES})"
+        )
     return content
 
 
@@ -158,7 +160,9 @@ def extract_text_from_image(url: str, reader: Optional[Any] = None) -> OCRResult
         return OCRResult(text="", confidence=0.0, language="unknown")
 
 
-def extract_text_from_bytes(image_bytes: bytes, reader: Optional[Any] = None) -> OCRResult:
+def extract_text_from_bytes(
+    image_bytes: bytes, reader: Optional[Any] = None
+) -> OCRResult:
     """
     Directly preprocess in-memory image bytes and run EasyOCR.
     Used by the /api/ocr screenshot upload endpoint.
@@ -169,7 +173,9 @@ def extract_text_from_bytes(image_bytes: bytes, reader: Optional[Any] = None) ->
         return OCRResult(text="", confidence=0.0, language="unknown")
 
     if not image_bytes or len(image_bytes) > MAX_FILE_BYTES:
-        logger.warning("Image empty or exceeds max file size of %d bytes", MAX_FILE_BYTES)
+        logger.warning(
+            "Image empty or exceeds max file size of %d bytes", MAX_FILE_BYTES
+        )
         return OCRResult(text="", confidence=0.0, language="unknown")
 
     try:

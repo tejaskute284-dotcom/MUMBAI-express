@@ -1,4 +1,4 @@
-﻿"""
+"""
 app/core/messages.py
 ────────────────────
 Centralized bot message strings (ADR-010).
@@ -18,10 +18,7 @@ from __future__ import annotations
 
 # ── Acknowledgement ───────────────────────────────────────────────────────────
 
-ACK_MESSAGE = (
-    "🔍 Checking this for you, one moment…\n"
-    "_MUMBAI express Fact-Check Bot_"
-)
+ACK_MESSAGE = "🔍 Checking this for you, one moment…\n_MUMBAI express Fact-Check Bot_"
 
 # ── Rate limit notice ─────────────────────────────────────────────────────────
 
@@ -77,7 +74,6 @@ DEMO_CONFIG = {
         "Insufficient": "No relevant sources found",
     },
     "disclaimer": (
-        "Simulated interface for demonstration. "
-        "Not affiliated with WhatsApp or Meta."
+        "Simulated interface for demonstration. Not affiliated with WhatsApp or Meta."
     ),
 }

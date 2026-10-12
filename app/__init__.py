@@ -1,4 +1,4 @@
-﻿"""
+"""
 MUMBAI express — Multilingual WhatsApp Fact-Checking System.
 
 End-to-end misinformation detection for India's messaging ecosystem.

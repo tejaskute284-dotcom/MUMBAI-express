@@ -9,7 +9,6 @@ explanation layer by treating user input as untrusted delimited data blocks
 rather than instruction text.
 """
 
-
 # LOOPHOLE-02: Known prompt injection markers to strip from user input
 _INJECTION_MARKERS = [
     "IGNORE PREVIOUS",
@@ -49,7 +48,7 @@ def sanitize_text(text: str, max_chars: int = 10_000) -> str:
     for marker in _INJECTION_MARKERS:
         idx = cleaned_upper.find(marker)
         while idx != -1:
-            cleaned = cleaned[:idx] + cleaned[idx + len(marker):]
+            cleaned = cleaned[:idx] + cleaned[idx + len(marker) :]
             cleaned_upper = cleaned.upper()
             idx = cleaned_upper.find(marker)
 

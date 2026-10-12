@@ -1,4 +1,4 @@
-﻿"""
+"""
 System-wide enums and constants for MUMBAI express.
 
 Defines foundational vocabulary and typing contracts across the system:
@@ -13,12 +13,12 @@ from enum import Enum
 
 class InputType(str, Enum):
     """Supported multimodal input channels for inbound message processing."""
+
     TEXT = "text"
     SCREENSHOT = "screenshot"
     VOICE = "voice"
     PDF = "pdf"
     URL = "url"
-
 
 
 class Tier(str, Enum):
